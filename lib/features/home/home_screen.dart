@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/feature_card.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -7,15 +9,59 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("FitMalaysia"),
+        title: const Text('FitMalaysia'),
       ),
-      body: const Center(
-        child: Text(
-          "Selamat Datang ke FitMalaysia 💚",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Selamat Datang 👋',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              'Mari kekal sihat hari ini!',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade700,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                children: const [
+                  FeatureCard(
+                    icon: Icons.fitness_center,
+                    title: 'Senaman',
+                  ),
+                  FeatureCard(
+                    icon: Icons.restaurant_menu,
+                    title: 'Pemakanan',
+                  ),
+                  FeatureCard(
+                    icon: Icons.article,
+                    title: 'Artikel',
+                  ),
+                  FeatureCard(
+                    icon: Icons.monitor_weight,
+                    title: 'BMI',
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
