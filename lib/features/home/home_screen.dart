@@ -5,6 +5,8 @@ import 'widgets/feature_card.dart';
 import 'widgets/health_tip_card.dart';
 import '../workout/workout_screen.dart';
 import 'widgets/water_tracker_card.dart';
+import '../nutrition/nutrition_screen.dart';
+import '../bmi/bmi_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -161,9 +163,10 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.restaurant_menu,
                   title: 'Pemakanan',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Modul Pemakanan akan datang 🚀'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NutritionScreen(),
                       ),
                     );
                   },
@@ -172,9 +175,10 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.article,
                   title: 'Artikel',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Modul Artikel akan datang 🚀'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BmiScreen(),
                       ),
                     );
                   },
@@ -183,9 +187,10 @@ class HomeScreen extends StatelessWidget {
                   icon: Icons.monitor_weight,
                   title: 'BMI',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Modul BMI akan datang 🚀'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BmiScreen(),
                       ),
                     );
                   },
