@@ -7,9 +7,17 @@ import '../workout/workout_screen.dart';
 import 'widgets/water_tracker_card.dart';
 import '../nutrition/nutrition_screen.dart';
 import '../bmi/bmi_screen.dart';
+import 'widgets/dashboard_summary_card.dart';
+import '../article/article_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
 
   static const List<String> quotes = [
     "Kesihatan adalah pelaburan terbaik untuk masa depan.",
@@ -139,6 +147,10 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
+            DashboardSummaryCard(),
+
+            const SizedBox(height: 24),
+
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -178,7 +190,7 @@ class HomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const BmiScreen(),
+                        builder: (_) => const ArticleScreen(),
                       ),
                     );
                   },
