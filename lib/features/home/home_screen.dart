@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
 import 'widgets/feature_card.dart';
 import 'widgets/health_tip_card.dart';
 import '../workout/workout_screen.dart';
@@ -19,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 
-  static const List<String> quotes = [
+  static List<String> quotes = [
     "Kesihatan adalah pelaburan terbaik untuk masa depan.",
     "Sedikit senaman setiap hari lebih baik daripada tiada langsung.",
     "Jangan putus asa. Kemajuan kecil tetap kemajuan.",
@@ -46,12 +45,12 @@ class _HomeScreenState extends State<HomeScreen> {
       greeting = "🌙 Selamat Malam";
     }
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Text('FitMalaysia'),
+        title: Text('FitMalaysia'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -63,15 +62,15 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Mari kekal sihat hari ini!',
               style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 24),
@@ -145,11 +144,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             DashboardSummaryCard(),
 
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             GridView.count(
               shrinkWrap: true,
@@ -216,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 24),
 
-            const HealthTipCard(
+            HealthTipCard(
               tip:
               'Berjalan sekurang-kurangnya 30 minit setiap hari dapat membantu meningkatkan kesihatan jantung.',
             ),
