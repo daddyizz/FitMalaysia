@@ -32,10 +32,10 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
 
   @override
   Widget build(BuildContext context) {
-    final waterProgress = water / 8;
+    final progress = (water / 8).clamp(0.0, 1.0);
 
     return Card(
-      elevation: 3,
+      elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -52,7 +52,7 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  "Ringkasan Hari Ini",
+                  "Statistik Hari Ini",
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -63,33 +63,26 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
 
             const SizedBox(height: 20),
 
-            Row(
-              children: [
-                const Icon(
-                  Icons.water_drop,
-                  color: Colors.blue,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    "Air: $water / 8 gelas",
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: waterProgress,
-                minHeight: 10,
+            const Text(
+              "💧 Pengambilan Air",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
+
+            LinearProgressIndicator(
+              value: progress,
+              minHeight: 10,
+              borderRadius: BorderRadius.circular(10),
+            ),
+
+            const SizedBox(height: 8),
+
+            Text("$water / 8 gelas"),
+
+            const Divider(height: 30),
 
             Row(
               children: [
@@ -101,45 +94,104 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
                 Expanded(
                   child: Text(
                     bmi == null
-                        ? "BMI: Belum dikira"
-                        : "BMI: ${bmi!.toStringAsFixed(1)} ($bmiResult)",
-                    style: const TextStyle(fontSize: 16),
+                        ? "BMI belum dikira"
+                        : "BMI ${bmi!.toStringAsFixed(1)} ($bmiResult)",
                   ),
                 ),
               ],
             ),
 
-            const Divider(height: 30),
+            const SizedBox(height: 20),
 
-            const Row(
-              children: [
-                Icon(
-                  Icons.fitness_center,
-                  color: Colors.green,
+            Row(
+              children: const [
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.fitness_center,
+                    title: "Workout",
+                    value: "6",
+                    color: Colors.green,
+                  ),
                 ),
-                SizedBox(width: 10),
-                Text(
-                  "Workout tersedia: 6",
+                SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.restaurant,
+                    title: "Nutrition",
+                    value: "5",
+                    color: Colors.orange,
+                  ),
                 ),
               ],
             ),
 
             const SizedBox(height: 12),
 
-            const Row(
-              children: [
-                Icon(
-                  Icons.restaurant,
-                  color: Colors.deepOrange,
+            Row(
+              children: const [
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.article,
+                    title: "Artikel",
+                    value: "5",
+                    color: Colors.blue,
+                  ),
                 ),
-                SizedBox(width: 10),
-                Text(
-                  "Nutrition tersedia: 5",
+                SizedBox(width: 12),
+                Expanded(
+                  child: _StatCard(
+                    icon: Icons.water_drop,
+                    title: "Target Air",
+                    value: "8",
+                    color: Colors.cyan,
+                  ),
                 ),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color color;
+
+  const _StatCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(title),
+        ],
       ),
     );
   }

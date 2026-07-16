@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../navigation/main_navigation_screen.dart';
+import '../main/main_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,68 +17,64 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const MainNavigationScreen(),
-        ),
-      );
-
-    });
-
+    Timer(
+      const Duration(seconds: 2),
+          () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const MainScreen(),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.green,
-
       body: Center(
-
         child: Column(
-
           mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
 
-          children: [
-
-            const Icon(
+            Icon(
               Icons.favorite,
               color: Colors.white,
               size: 90,
             ),
 
-            const SizedBox(height: 20),
+            SizedBox(height: 24),
 
-            const Text(
+            Text(
               "FitMalaysia",
               style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
                 fontSize: 34,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
 
-            const SizedBox(height: 8),
+            SizedBox(height: 10),
 
             Text(
-              "Sihat Bermula Hari Ini",
+              "Healthy Life Starts Today",
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 18,
+                color: Colors.white70,
               ),
+            ),
+
+            SizedBox(height: 50),
+
+            CircularProgressIndicator(
+              color: Colors.white,
             ),
 
           ],
-
         ),
-
       ),
-
     );
-
   }
-
 }

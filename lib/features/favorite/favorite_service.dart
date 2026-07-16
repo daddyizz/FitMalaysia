@@ -1,24 +1,32 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FavoriteService {
-  static const String workoutKey = "favorite_workouts";
+  static const workoutKey = "favorite_workouts";
+  static const nutritionKey = "favorite_nutrition";
+  static const articleKey = "favorite_articles";
 
-  static Future<List<String>> getFavoriteWorkouts() async {
+  static Future<List<String>> getFavorites(String key) async {
     final prefs = await SharedPreferences.getInstance();
 
-    return prefs.getStringList(workoutKey) ?? [];
+    return prefs.getStringList(key) ?? [];
   }
 
-  static Future<bool> isWorkoutFavorite(String title) async {
-    final favorites = await getFavoriteWorkouts();
+  static Future<bool> isFavorite(
+      String key,
+      String title,
+      ) async {
+    final favorites = await getFavorites(key);
 
     return favorites.contains(title);
   }
 
-  static Future<void> toggleWorkoutFavorite(String title) async {
+  static Future<void> toggleFavorite(
+      String key,
+      String title,
+      ) async {
     final prefs = await SharedPreferences.getInstance();
 
-    final favorites = await getFavoriteWorkouts();
+    final favorites = await getFavorites(key);
 
     if (favorites.contains(title)) {
       favorites.remove(title);
@@ -26,6 +34,6 @@ class FavoriteService {
       favorites.add(title);
     }
 
-    await prefs.setStringList(workoutKey, favorites);
+    await prefs.setStringList(key, favorites);
   }
 }
