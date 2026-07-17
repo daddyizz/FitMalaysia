@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
+import '../../services/auth_service.dart';
 import '../main/main_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -13,19 +13,33 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
 
+  Future<void> initializeApp() async {
+    final user = await AuthService.signInAnonymously();
+
+    if (user != null) {
+      debugPrint("Firebase UID: ${user.uid}");
+    } else {
+      debugPrint("Anonymous login failed.");
+    }
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MainScreen(),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
 
     Timer(
       const Duration(seconds: 2),
-          () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const MainScreen(),
-          ),
-        );
+          () async {
+        await initializeApp();
       },
     );
   }

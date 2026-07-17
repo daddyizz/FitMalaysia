@@ -11,5 +11,7 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  await MobileAds.instance.initialize();
+
   runApp(const FitMalaysiaApp());
 }
