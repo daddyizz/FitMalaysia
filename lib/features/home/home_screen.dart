@@ -8,6 +8,7 @@ import '../nutrition/nutrition_screen.dart';
 import '../bmi/bmi_screen.dart';
 import 'widgets/dashboard_summary_card.dart';
 import '../article/article_screen.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +19,41 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 
-  static List<String> quotes = [
+  late BannerAd _bannerAd;
+  bool _isBannerReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _bannerAd = BannerAd(
+      adUnitId: 'ca-app-pub-4110950503958596/2401217451', // Daddy Izz Real Banner Unit
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          if (!mounted) return;
+          setState(() {
+            _isBannerReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          debugPrint('Banner failed: $error');
+        },
+      ),
+    );
+
+    _bannerAd.load();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd.dispose();
+    super.dispose();
+  }
+
+  static const List<String> quotes = [
     "Kesihatan adalah pelaburan terbaik untuk masa depan.",
     "Sedikit senaman setiap hari lebih baik daripada tiada langsung.",
     "Jangan putus asa. Kemajuan kecil tetap kemajuan.",
@@ -50,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: Text('FitMalaysia'),
+        title: const Text('FitMalaysia'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -219,6 +254,18 @@ class _HomeScreenState extends State<HomeScreen> {
               tip:
               'Berjalan sekurang-kurangnya 30 minit setiap hari dapat membantu meningkatkan kesihatan jantung.',
             ),
+            const SizedBox(height: 24),
+
+            if (_isBannerReady)
+              Center(
+                child: SizedBox(
+                  width: _bannerAd.size.width.toDouble(),
+                  height: _bannerAd.size.height.toDouble(),
+                  child: AdWidget(ad: _bannerAd),
+                ),
+              ),
+
+            const SizedBox(height: 20),
           ],
         ),
       ),

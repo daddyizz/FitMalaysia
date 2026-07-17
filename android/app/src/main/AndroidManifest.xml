@@ -3,6 +3,12 @@
         android:label="fitmalaysia"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- AdMob App ID (Google Test) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-4110950503958596~5748179910"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
