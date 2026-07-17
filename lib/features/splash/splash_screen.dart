@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import '../../services/firestore_service.dart';
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../main/main_screen.dart';
@@ -14,13 +14,23 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> initializeApp() async {
+    debugPrint("STEP 1");
+
     final user = await AuthService.signInAnonymously();
 
+    debugPrint("STEP 2");
+
     if (user != null) {
-      debugPrint("Firebase UID: ${user.uid}");
+      debugPrint("STEP 3 UID: ${user.uid}");
+
+      await FirestoreService.createUserIfNotExists();
+
+      debugPrint("STEP 4 Firestore OK");
     } else {
       debugPrint("Anonymous login failed.");
     }
+
+    debugPrint("STEP 5 Navigate");
 
     if (!mounted) return;
 
