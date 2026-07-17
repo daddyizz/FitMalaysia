@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/firestore_service.dart';
 
 class WorkoutProgressService {
   static const String workoutCountKey = 'workout_count';
@@ -10,8 +11,22 @@ class WorkoutProgressService {
     final count = prefs.getInt(workoutCountKey) ?? 0;
     final totalMinutes = prefs.getInt(workoutMinutesKey) ?? 0;
 
-    await prefs.setInt(workoutCountKey, count + 1);
-    await prefs.setInt(workoutMinutesKey, totalMinutes + minutes);
+    final newCount = count + 1;
+    final newMinutes = totalMinutes + minutes;
+
+    // Simpan dalam telefon
+    await prefs.setInt(workoutCountKey, newCount);
+    await prefs.setInt(workoutMinutesKey, newMinutes);
+
+    // Backup ke Firebase
+    try {
+      await FirestoreService.updateWorkoutStats(
+        workoutCount: newCount,
+        workoutMinutes: newMinutes,
+      );
+    } catch (e) {
+      print("Firestore Sync Error: $e");
+    }
   }
 
   static Future<int> getWorkoutCount() async {

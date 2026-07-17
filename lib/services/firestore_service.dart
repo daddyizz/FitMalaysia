@@ -23,4 +23,19 @@ class FirestoreService {
       });
     }
   }
+
+  static Future<void> updateWorkoutStats({
+    required int workoutCount,
+    required int workoutMinutes,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    await _db.collection("users").doc(user.uid).update({
+      "workoutCount": workoutCount,
+      "workoutMinutes": workoutMinutes,
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
+  }
 }
