@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../workout_progress_service.dart';
 import '../models/workout.dart';
+import '../../../services/firestore_service.dart';
 
 class WorkoutTimerScreen extends StatefulWidget {
   final Workout workout;
@@ -65,6 +66,11 @@ class _WorkoutTimerScreenState extends State<WorkoutTimerScreen> {
                         onPressed: () async {
                           await WorkoutProgressService.completeWorkout(
                             widget.workout.durationMinutes,
+                          );
+
+                          await FirestoreService.addWorkoutHistory(
+                            title: widget.workout.title,
+                            duration: widget.workout.durationMinutes,
                           );
 
                           if (!mounted) return;

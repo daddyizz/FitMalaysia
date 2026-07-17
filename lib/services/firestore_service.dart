@@ -24,6 +24,25 @@ class FirestoreService {
     }
   }
 
+  static Future<void> addWorkoutHistory({
+    required String title,
+    required int duration,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    await _db
+        .collection("users")
+        .doc(user.uid)
+        .collection("workouts")
+        .add({
+      "title": title,
+      "duration": duration,
+      "completedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
   static Future<void> updateWorkoutStats({
     required int workoutCount,
     required int workoutMinutes,
