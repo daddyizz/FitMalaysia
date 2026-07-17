@@ -23,7 +23,7 @@ class NutritionDetailScreen extends StatelessWidget {
           Container(
             height: 220,
             decoration: BoxDecoration(
-              color: Colors.green.shade50,
+              color: Theme.of(context).colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Center(
@@ -44,21 +44,23 @@ class NutritionDetailScreen extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          const Text(
+          Text(
             "💡 Cadangan",
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
 
           const SizedBox(height: 10),
 
-          const Text(
+          Text(
             "Nikmati makanan ini secara sederhana dan seimbangkan dengan sayur-sayuran serta air kosong.",
             style: TextStyle(
               fontSize: 16,
               height: 1.5,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],

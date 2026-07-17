@@ -83,8 +83,9 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
                     title: Text(
                       article.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
 

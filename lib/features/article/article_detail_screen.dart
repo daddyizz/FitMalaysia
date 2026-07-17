@@ -22,7 +22,7 @@ class ArticleDetailScreen extends StatelessWidget {
           Container(
             height: 220,
             decoration: BoxDecoration(
-              color: Colors.green.shade50,
+              color: Theme.of(context).colorScheme.surfaceContainer,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Center(
@@ -38,16 +38,17 @@ class ArticleDetailScreen extends StatelessWidget {
 
           Chip(
             label: Text(article.category),
-            backgroundColor: Colors.green.shade100,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
           ),
 
           const SizedBox(height: 20),
 
           Text(
             article.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
 
@@ -55,17 +56,18 @@ class ArticleDetailScreen extends StatelessWidget {
 
           Text(
             article.content,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               height: 1.7,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
 
           const SizedBox(height: 30),
 
           Card(
-            color: Colors.green.shade50,
-            child: const Padding(
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            child: Padding(
               padding: EdgeInsets.all(16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,6 +83,7 @@ class ArticleDetailScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         height: 1.5,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),

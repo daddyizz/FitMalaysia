@@ -17,7 +17,7 @@ class WorkoutHeader extends StatelessWidget {
         Container(
           height: 220,
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
+            color: Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Center(

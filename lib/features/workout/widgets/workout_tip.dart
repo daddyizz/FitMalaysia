@@ -15,7 +15,7 @@ class WorkoutTip extends StatelessWidget {
     return Column(
       children: [
         Card(
-          color: Colors.green.shade50,
+          color: Theme.of(context).colorScheme.surfaceContainer,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -29,8 +29,9 @@ class WorkoutTip extends StatelessWidget {
                 Expanded(
                   child: Text(
                     workout.tip,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
