@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../workout/workout_progress_service.dart';
 
 class DashboardSummaryCard extends StatefulWidget {
   const DashboardSummaryCard({super.key});
@@ -9,10 +10,16 @@ class DashboardSummaryCard extends StatefulWidget {
       _DashboardSummaryCardState();
 }
 
-class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
+class _DashboardSummaryCardState
+    extends State<DashboardSummaryCard> {
   int water = 0;
   double? bmi;
   String bmiResult = "";
+
+  int workoutCount = 0;
+  int workoutMinutes = 0;
+
+  String achievement = "";
 
   @override
   void initState() {
@@ -23,16 +30,33 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
 
+    final count =
+    await WorkoutProgressService.getWorkoutCount();
+
+    final minutes =
+    await WorkoutProgressService.getWorkoutMinutes();
+
+    final badge =
+    await WorkoutProgressService.getAchievement();
+
+    if (!mounted) return;
+
     setState(() {
       water = prefs.getInt('water') ?? 0;
       bmi = prefs.getDouble('last_bmi');
-      bmiResult = prefs.getString('last_bmi_result') ?? "";
+      bmiResult =
+          prefs.getString('last_bmi_result') ?? "";
+
+      workoutCount = count;
+      workoutMinutes = minutes;
+      achievement = badge;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final progress = (water / 8).clamp(0.0, 1.0);
+    final progress =
+    (water / 8).clamp(0.0, 1.0);
 
     return Card(
       elevation: 4,
@@ -42,7 +66,8 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+          CrossAxisAlignment.start,
           children: [
             const Row(
               children: [
@@ -75,7 +100,8 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
             LinearProgressIndicator(
               value: progress,
               minHeight: 10,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius:
+              BorderRadius.circular(10),
             ),
 
             const SizedBox(height: 8),
@@ -104,21 +130,24 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
             const SizedBox(height: 20),
 
             Row(
-              children: const [
+              children: [
                 Expanded(
                   child: _StatCard(
-                    icon: Icons.fitness_center,
+                    icon:
+                    Icons.fitness_center,
                     title: "Workout",
-                    value: "6",
+                    value: workoutCount
+                        .toString(),
                     color: Colors.green,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
-                    icon: Icons.restaurant,
-                    title: "Nutrition",
-                    value: "5",
+                    icon: Icons.timer,
+                    title: "Minit",
+                    value: workoutMinutes
+                        .toString(),
                     color: Colors.orange,
                   ),
                 ),
@@ -128,8 +157,8 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
             const SizedBox(height: 12),
 
             Row(
-              children: const [
-                Expanded(
+              children: [
+                const Expanded(
                   child: _StatCard(
                     icon: Icons.article,
                     title: "Artikel",
@@ -137,16 +166,42 @@ class _DashboardSummaryCardState extends State<DashboardSummaryCard> {
                     color: Colors.blue,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
-                    icon: Icons.water_drop,
+                    icon:
+                    Icons.water_drop,
                     title: "Target Air",
-                    value: "8",
+                    value: "$water/8",
                     color: Colors.cyan,
                   ),
                 ),
               ],
+            ),
+
+            const SizedBox(height: 20),
+
+            Card(
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              child: ListTile(
+                leading: const Icon(
+                  Icons.workspace_premium,
+                  color: Colors.amber,
+                ),
+                title: Text(
+                  "Achievement",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  achievement,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -171,10 +226,12 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding:
+      const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
+        color: color.withValues(alpha: 0.08),
+        borderRadius:
+        BorderRadius.circular(16),
       ),
       child: Column(
         children: [
@@ -187,7 +244,8 @@ class _StatCard extends StatelessWidget {
             value,
             style: const TextStyle(
               fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+              FontWeight.bold,
             ),
           ),
           Text(title),

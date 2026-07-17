@@ -202,13 +202,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 FeatureCard(
                   icon: Icons.fitness_center,
                   title: 'Senaman',
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => const WorkoutScreen(),
                       ),
                     );
+
+                    setState(() {});
                   },
                 ),
                 FeatureCard(

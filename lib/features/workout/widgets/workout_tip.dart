@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/workout.dart';
+import '../screens/workout_timer_screen.dart';
 
 class WorkoutTip extends StatelessWidget {
   final Workout workout;
@@ -47,10 +48,11 @@ class WorkoutTip extends StatelessWidget {
           height: 55,
           child: ElevatedButton.icon(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    "${workout.title} Timer akan datang 💪",
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WorkoutTimerScreen(
+                    workout: workout,
                   ),
                 ),
               );

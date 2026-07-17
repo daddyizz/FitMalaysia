@@ -16,7 +16,7 @@ class WorkoutInfo extends StatelessWidget {
       children: [
         _buildInfo(
           "⏱ Tempoh",
-          workout.duration,
+          workout.durationText,
         ),
 
         _buildInfo(

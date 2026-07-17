@@ -142,7 +142,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                       color: Colors.blue,
                                     ),
                                     const SizedBox(width: 4),
-                                    Text(workout.duration),
+                                    Text(workout.durationText),
                                   ],
                                 ),
 

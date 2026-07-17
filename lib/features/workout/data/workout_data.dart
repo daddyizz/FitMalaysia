@@ -4,7 +4,7 @@ import '../models/workout.dart';
 const List<Workout> workoutData = [
   Workout(
     title: 'Push Up',
-    duration: '10 minit',
+    durationMinutes: 10,
     difficulty: 'Mudah',
     calories: 50,
     icon: Icons.fitness_center,
@@ -28,7 +28,7 @@ const List<Workout> workoutData = [
 
   Workout(
     title: 'Squat',
-    duration: '15 minit',
+    durationMinutes: 15,
     difficulty: 'Mudah',
     calories: 70,
     icon: Icons.accessibility_new,
@@ -50,7 +50,7 @@ const List<Workout> workoutData = [
 
   Workout(
     title: 'Plank',
-    duration: '5 minit',
+    durationMinutes: 5,
     difficulty: 'Sederhana',
     calories: 30,
     icon: Icons.self_improvement,
@@ -71,7 +71,7 @@ const List<Workout> workoutData = [
 
   Workout(
     title: 'Jumping Jack',
-    duration: '10 minit',
+    durationMinutes: 10,
     difficulty: 'Mudah',
     calories: 80,
     icon: Icons.directions_run,
@@ -93,7 +93,7 @@ const List<Workout> workoutData = [
 
   Workout(
     title: 'Burpees',
-    duration: '8 minit',
+    durationMinutes: 8,
     difficulty: 'Sukar',
     calories: 100,
     icon: Icons.local_fire_department,

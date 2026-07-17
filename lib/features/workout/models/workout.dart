@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class Workout {
   final String title;
-  final String duration;
+
+  // Baru
+  final int durationMinutes;
+
   final String difficulty;
   final int calories;
   final IconData icon;
 
-  // BARU
   final String description;
   final List<String> steps;
   final List<String> benefits;
@@ -15,7 +17,7 @@ class Workout {
 
   const Workout({
     required this.title,
-    required this.duration,
+    required this.durationMinutes,
     required this.difficulty,
     required this.calories,
     required this.icon,
@@ -24,4 +26,7 @@ class Workout {
     required this.benefits,
     required this.tip,
   });
+
+  /// Untuk paparan UI
+  String get durationText => "$durationMinutes minit";
 }
