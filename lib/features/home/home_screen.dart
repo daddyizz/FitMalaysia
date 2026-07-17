@@ -9,6 +9,7 @@ import '../bmi/bmi_screen.dart';
 import 'widgets/dashboard_summary_card.dart';
 import '../article/article_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,12 +23,17 @@ class _HomeScreenState extends State<HomeScreen> {
   late BannerAd _bannerAd;
   bool _isBannerReady = false;
 
+  static const String _bannerAdUnitId = kDebugMode
+      ? 'ca-app-pub-3940256099942544/6300978111' // Google Test Banner
+      : 'ca-app-pub-4110950503958596/2401217451'; // Banner ID sebenar
+
+
   @override
   void initState() {
     super.initState();
 
     _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-4110950503958596/2401217451', // Daddy Izz Real Banner Unit
+      adUnitId: _bannerAdUnitId, // Google Banner Unit
       request: const AdRequest(),
       size: AdSize.banner,
       listener: BannerAdListener(
