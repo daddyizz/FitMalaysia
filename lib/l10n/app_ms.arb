@@ -1,0 +1,10 @@
+{
+  "@@locale": "ms",
+
+  "appName": "FitMalaysia",
+  "home": "Utama",
+  "workout": "Senaman",
+  "nutrition": "Pemakanan",
+  "settings": "Tetapan",
+  "history": "Sejarah"
+}
