@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "245792719747",
+    "project_id": "fitmalaysia-134fe",
+    "storage_bucket": "fitmalaysia-134fe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:245792719747:android:6af615f90c297db239ecb6",
+        "android_client_info": {
+          "package_name": "com.example.fitmalaysia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3DETSnjxoHzLuU65MDUC5W4c37uyZImM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
