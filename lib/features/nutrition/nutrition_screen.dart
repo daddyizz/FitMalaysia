@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'nutrition_detail_screen.dart';
 import 'data/food_data.dart';
+import 'package:fitmalaysia/widgets/empty_state.dart';
+import 'models/food.dart';
 
 class NutritionScreen extends StatefulWidget {
   const NutritionScreen({super.key});
@@ -12,7 +14,7 @@ class NutritionScreen extends StatefulWidget {
 class _NutritionScreenState extends State<NutritionScreen> {
   String search = "";
 
-  late List filteredFood;
+  late List<Food> filteredFood;
 
   @override
   void initState() {
@@ -50,9 +52,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
               ),
             ),
           ),
-
           Expanded(
-            child: ListView.builder(
+            child: filteredFood.isEmpty
+                ? const EmptyState(
+              icon: Icons.restaurant_menu,
+              title: 'Tiada Makanan Dijumpai',
+              message: 'Cuba gunakan kata kunci lain.',
+            )
+                : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: filteredFood.length,
               itemBuilder: (context, index) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:fitmalaysia/widgets/empty_state.dart';
 import 'article_detail_screen.dart';
 import 'data/article_data.dart';
 import 'models/article.dart';
@@ -58,7 +58,13 @@ class _ArticleScreenState extends State<ArticleScreen> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
+            child: filteredArticles.isEmpty
+                ? const EmptyState(
+              icon: Icons.search_off,
+              title: 'Tiada Artikel Dijumpai',
+              message: 'Cuba gunakan kata kunci lain.',
+            )
+                : ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: filteredArticles.length,
               itemBuilder: (context, index) {
@@ -99,7 +105,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                             label: Text(article.category),
                             backgroundColor:
                             categoryColor(article.category)
-                                .withOpacity(0.15),
+                                .withValues(alpha: 0.15),
                             labelStyle: TextStyle(
                               color: categoryColor(article.category),
                               fontWeight: FontWeight.bold,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:fitmalaysia/widgets/empty_state.dart';
 import 'favorite_service.dart';
 
 class FavoriteScreen extends StatefulWidget {
@@ -47,29 +47,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         title: const Text("Kegemaran"),
       ),
       body: workouts.isEmpty
-          ? const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.favorite_border,
-              size: 80,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 20),
-            Text(
-              "Belum ada workout kegemaran",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              "Tekan ❤️ pada Workout untuk simpan.",
-            ),
-          ],
-        ),
+          ? const EmptyState(
+        icon: Icons.favorite_border,
+        title: 'Belum Ada Workout Kegemaran',
+        message: 'Tekan ❤️ pada mana-mana workout untuk menyimpannya.',
       )
           : ListView.builder(
         padding: const EdgeInsets.all(16),
