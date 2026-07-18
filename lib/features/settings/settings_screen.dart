@@ -50,6 +50,25 @@ class SettingsScreen extends StatelessWidget {
 
           const Divider(),
 
+          ListTile(
+            leading: const Icon(
+              Icons.language,
+              color: Colors.green,
+            ),
+            title: const Text("Bahasa"),
+            subtitle: const Text("Bahasa Melayu"),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    "Penukaran bahasa akan diaktifkan dalam sprint ini 🌍",
+                  ),
+                ),
+              );
+            },
+          ),
+
           const ListTile(
             leading: Icon(Icons.favorite, color: Colors.red),
             title: Text("Dibangunkan dengan ❤️"),
