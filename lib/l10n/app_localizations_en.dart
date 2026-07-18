@@ -25,4 +25,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get history => 'History';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get appVersion => 'App Version';
+
+  @override
+  String get resetBmi => 'Reset BMI';
+
+  @override
+  String get resetBmiDesc => 'Delete saved BMI records';
+
+  @override
+  String get resetWater => 'Reset Water';
+
+  @override
+  String get resetWaterDesc => 'Clear saved water intake records';
+
+  @override
+  String get about => 'Built with ❤️';
+
+  @override
+  String get developer => 'Daddy Izz Studio';
+
+  @override
+  String get comingSoon => 'This feature will be added in the next sprint 🚀';
+
+  @override
+  String get chooseLanguage => 'Choose Language';
+
+  @override
+  String get malay => 'Bahasa Melayu';
+
+  @override
+  String get english => 'English';
 }

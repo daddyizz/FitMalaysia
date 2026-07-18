@@ -1,34 +1,41 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
+
+import 'package:provider/provider.dart';
+import '../../controllers/language_controller.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final languageController = context.watch<LanguageController>();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Tetapan"),
+        title: Text(l10n.settings),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const ListTile(
-            leading: Icon(Icons.info_outline, color: Colors.blue),
-            title: Text("Versi Aplikasi"),
-            subtitle: Text("FitMalaysia Alpha v1.0"),
+          ListTile(
+            leading: const Icon(Icons.info_outline, color: Colors.blue),
+            title: Text(l10n.appVersion),
+            subtitle: const Text("FitMalaysia Alpha v1.0"),
           ),
 
           const Divider(),
 
           ListTile(
             leading: const Icon(Icons.monitor_weight, color: Colors.orange),
-            title: const Text("Reset BMI"),
-            subtitle: const Text("Padam bacaan BMI yang disimpan"),
+            title: Text(l10n.resetBmi),
+            subtitle: Text(l10n.resetBmiDesc),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Fungsi Reset BMI akan ditambah dalam Sprint seterusnya 🚀"),
+                SnackBar(
+                  content: Text(l10n.comingSoon),
                 ),
               );
             },
@@ -36,13 +43,13 @@ class SettingsScreen extends StatelessWidget {
 
           ListTile(
             leading: const Icon(Icons.water_drop, color: Colors.blue),
-            title: const Text("Reset Air"),
-            subtitle: const Text("Kosongkan rekod pengambilan air"),
+            title: Text(l10n.resetWater),
+            subtitle: Text(l10n.resetWaterDesc),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Fungsi Reset Air akan ditambah dalam Sprint seterusnya 🚀"),
+                SnackBar(
+                  content: Text(l10n.comingSoon),
                 ),
               );
             },
@@ -51,28 +58,49 @@ class SettingsScreen extends StatelessWidget {
           const Divider(),
 
           ListTile(
-            leading: const Icon(
-              Icons.language,
-              color: Colors.green,
+            leading: const Icon(Icons.language, color: Colors.green),
+            title: Text(l10n.language),
+            subtitle: Text(
+              languageController.locale.languageCode == 'ms'
+                  ? l10n.malay
+                  : l10n.english,
             ),
-            title: const Text("Bahasa"),
-            subtitle: const Text("Bahasa Melayu"),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    "Penukaran bahasa akan diaktifkan dalam sprint ini 🌍",
-                  ),
-                ),
+            onTap: () async {
+              final result = await showDialog<String>(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: Text(l10n.chooseLanguage),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Text("🇲🇾"),
+                          title: Text(l10n.malay),
+                          onTap: () => Navigator.pop(context, "ms"),
+                        ),
+                        ListTile(
+                          leading: const Text("🇬🇧"),
+                          title: Text(l10n.english),
+                          onTap: () => Navigator.pop(context, "en"),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
+
+              if (result != null && context.mounted) {
+                await context.read<LanguageController>().changeLanguage(result);
+              }
             },
           ),
 
-          const ListTile(
-            leading: Icon(Icons.favorite, color: Colors.red),
-            title: Text("Dibangunkan dengan ❤️"),
-            subtitle: Text("Daddy Izz Studio"),
+          ListTile(
+            leading: const Icon(Icons.favorite, color: Colors.red),
+            title: Text(l10n.about),
+            subtitle: Text(l10n.developer),
           ),
         ],
       ),

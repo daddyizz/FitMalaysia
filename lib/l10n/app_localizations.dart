@@ -130,6 +130,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'History'**
   String get history;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'App Version'**
+  String get appVersion;
+
+  /// No description provided for @resetBmi.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset BMI'**
+  String get resetBmi;
+
+  /// No description provided for @resetBmiDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete saved BMI records'**
+  String get resetBmiDesc;
+
+  /// No description provided for @resetWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Water'**
+  String get resetWater;
+
+  /// No description provided for @resetWaterDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear saved water intake records'**
+  String get resetWaterDesc;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'Built with ❤️'**
+  String get about;
+
+  /// No description provided for @developer.
+  ///
+  /// In en, this message translates to:
+  /// **'Daddy Izz Studio'**
+  String get developer;
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'This feature will be added in the next sprint 🚀'**
+  String get comingSoon;
+
+  /// No description provided for @chooseLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Language'**
+  String get chooseLanguage;
+
+  /// No description provided for @malay.
+  ///
+  /// In en, this message translates to:
+  /// **'Bahasa Melayu'**
+  String get malay;
+
+  /// No description provided for @english.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
