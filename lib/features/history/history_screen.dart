@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:fitmalaysia/widgets/empty_state.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -44,11 +45,10 @@ class HistoryScreen extends StatelessWidget {
           final docs = snapshot.data!.docs;
 
           if (docs.isEmpty) {
-            return const Center(
-              child: Text(
-                "Belum ada sejarah workout.\nJom mulakan workout pertama anda! 💪",
-                textAlign: TextAlign.center,
-              ),
+            return const EmptyState(
+              icon: Icons.history,
+              title: 'Belum Ada Rekod',
+              message: 'Selesaikan workout pertama anda untuk melihat sejarah di sini.',
             );
           }
 

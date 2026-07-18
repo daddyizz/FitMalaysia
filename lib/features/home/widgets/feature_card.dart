@@ -4,11 +4,13 @@ class FeatureCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback? onTap;
+  final Color color;
 
   const FeatureCard({
     super.key,
     required this.icon,
     required this.title,
+    required this.color,
     this.onTap,
   });
 
@@ -28,10 +30,14 @@ class FeatureCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 42,
-                color: Colors.green,
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: color.withValues(alpha: 0.12),
+                child: Icon(
+                  icon,
+                  size: 30,
+                  color: color,
+                ),
               ),
               const SizedBox(height: 12),
               Text(

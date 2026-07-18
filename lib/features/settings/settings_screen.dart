@@ -22,7 +22,7 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.info_outline, color: Colors.blue),
             title: Text(l10n.appVersion),
-            subtitle: const Text("FitMalaysia Alpha v1.0"),
+            subtitle: const Text("Version 1.0.0-alpha"),
           ),
 
           const Divider(),
@@ -101,6 +101,7 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.favorite, color: Colors.red),
             title: Text(l10n.about),
             subtitle: Text(l10n.developer),
+            trailing: const Icon(Icons.chevron_right),
           ),
         ],
       ),

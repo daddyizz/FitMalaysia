@@ -10,6 +10,7 @@ import 'widgets/dashboard_summary_card.dart';
 import '../article/article_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart';
+import 'widgets/daily_goal_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -175,10 +176,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   SizedBox(height: 8),
 
-                  Text(
-                    "✔ Sasaran: 30 minit senaman hari ini",
-                    style: TextStyle(
-                      color: Colors.white,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          "30 minit senaman hari ini",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -188,6 +211,13 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(height: 24),
 
             DashboardSummaryCard(),
+
+            SizedBox(height: 24),
+
+            DailyGoalCard(
+              water: 5,
+              workoutDone: false,
+            ),
 
             SizedBox(height: 24),
 
@@ -202,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 FeatureCard(
                   icon: Icons.fitness_center,
                   title: 'Senaman',
+                  color: Colors.green,
                   onTap: () async {
                     await Navigator.push(
                       context,
@@ -216,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 FeatureCard(
                   icon: Icons.restaurant_menu,
                   title: 'Pemakanan',
+                  color: Colors.orange,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -228,6 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 FeatureCard(
                   icon: Icons.article,
                   title: 'Artikel',
+                  color: Colors.blue,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -240,6 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 FeatureCard(
                   icon: Icons.monitor_weight,
                   title: 'BMI',
+                  color: Colors.purple,
                   onTap: () {
                     Navigator.push(
                       context,

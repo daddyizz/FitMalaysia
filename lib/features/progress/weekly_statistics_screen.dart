@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/statistics_service.dart';
+import '../../widgets/stat_card.dart';
 
 class WeeklyStatisticsScreen extends StatelessWidget {
   const WeeklyStatisticsScreen({super.key});
@@ -44,36 +45,18 @@ class WeeklyStatisticsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ListTile(
-                    leading: const Icon(Icons.fitness_center),
-                    title: const Text("Workout Minggu Ini"),
-                    trailing: Text(
-                      "$totalWorkout Sesi",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
+                StatCard(
+                  icon: Icons.fitness_center,
+                  title: "Workout Minggu Ini",
+                  value: "$totalWorkout Sesi",
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  child: ListTile(
-                    leading: const Icon(Icons.timer),
-                    title: const Text("Jumlah Minit"),
-                    trailing: Text(
-                      "$totalMinutes min",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
+                StatCard(
+                  icon: Icons.timer,
+                  title: "Jumlah Minit",
+                  value: "$totalMinutes min",
                 ),
               ],
             )
