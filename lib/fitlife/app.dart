@@ -1083,14 +1083,14 @@ class ProfilePage extends StatelessWidget {
     final streak = _currentStreak(store.history);
     return AppPage(
       title: 'Profile',
-      subtitle: store.name.isEmpty ? 'FitLife member' : store.name,
+      subtitle: store.name.isEmpty ? 'Guest' : store.name,
       actions: [Container(width: 40, height: 40, decoration: const BoxDecoration(color: Color(0xFF303530), shape: BoxShape.circle), child: IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings are available below.'))), icon: const Icon(Icons.settings_outlined)))],
       child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
           Container(width: 64, height: 64, alignment: Alignment.center, decoration: const BoxDecoration(color: Color(0xFFBCF04B), shape: BoxShape.circle), child: Text((store.name.isEmpty ? 'F' : store.name[0]).toUpperCase(), style: GoogleFonts.archivo(color: const Color(0xFF182318), fontSize: 25, fontWeight: FontWeight.w900))),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(store.name.isEmpty ? 'FitLife member' : store.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.archivo(fontSize: 19, fontWeight: FontWeight.w900)),
+            Text(store.name.isEmpty ? 'Guest' : store.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.archivo(fontSize: 19, fontWeight: FontWeight.w900)),
             const SizedBox(height: 3),
             Text('Level ${store.level} · ${store.xp} XP · ${store.fitnessLevel}', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)),
             const SizedBox(height: 9),
@@ -1113,7 +1113,7 @@ class ProfilePage extends StatelessWidget {
           Row(children: [
             Expanded(child: TextFormField(initialValue: store.heightCm?.toStringAsFixed(0) ?? '', keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (value) { final parsed = double.tryParse(value.replaceAll(',', '.')); if (parsed != null) context.read<FitLifeStore>().updateProfile(height: parsed); }, decoration: const InputDecoration(labelText: 'Height (cm)'))),
             const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Weight (kg)', style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)), const SizedBox(height: 6), SizedBox(width: double.infinity, child: FilledButton(onPressed: () => logWeight(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF303530), foregroundColor: const Color(0xFFF1F5F1), elevation: 0, alignment: Alignment.centerLeft), child: Text(store.weightKg == null ? 'LOG WEIGHT' : '${store.weightKg!.toStringAsFixed(1)} kg')))])),
+            Expanded(child: InkWell(onTap: () => logWeight(context), borderRadius: BorderRadius.circular(12), child: InputDecorator(decoration: const InputDecoration(labelText: 'Weight (kg)'), child: Text(store.weightKg == null ? 'Log weight' : '${store.weightKg!.toStringAsFixed(1)} kg')))),
           ]),
           const SizedBox(height: 18),
           const Text('Fitness level', style: TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 8),
