@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -16,7 +17,9 @@ const _buttonTextLift = Shadow(color: Color(0x660B2613), blurRadius: 1.6, offset
 const _nutritionDisclaimer = 'This is general educational information only and is not medical or dietary advice. Individual needs vary. Speak to a qualified doctor or registered dietitian before making significant changes, especially if you have a health condition, are pregnant, or take medication.';
 final _shellNavigation = ValueNotifier<int>(0);
 final _waterToastVisible = ValueNotifier<bool>(false);
+final _achievementToast = ValueNotifier<AchievementNotice?>(null);
 Timer? _waterToastTimer;
+Timer? _achievementToastTimer;
 
 bool _isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
 Color _muted(BuildContext context) => _isDark(context) ? const Color(0xFFAFBBB3) : const Color(0xFF68756D);
@@ -37,9 +40,58 @@ class FitLifeApp extends StatelessWidget {
       themeMode: store.themePreference == 'system' ? ThemeMode.system : store.themePreference == 'light' ? ThemeMode.light : ThemeMode.dark,
       theme: _lightTheme(),
       darkTheme: _nightTheme(),
+      builder: (context, child) => Stack(children: [if (child != null) child, const _AchievementToast()]),
       home: store.onboarded ? const FitLifeShell() : const OnboardingScreen(),
     );
   }
+}
+
+class _AchievementToast extends StatelessWidget {
+  const _AchievementToast();
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<AchievementNotice?>(
+        valueListenable: _achievementToast,
+        builder: (context, achievement, _) {
+          if (achievement == null) return const SizedBox.shrink();
+          final scheme = Theme.of(context).colorScheme;
+          return Positioned(
+            top: MediaQuery.paddingOf(context).top + 12,
+            left: 16,
+            right: 16,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: _elevated(context), borderRadius: BorderRadius.circular(18), border: Border.all(color: scheme.primary.withOpacity(.35)), boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 6))]),
+                child: Row(children: [
+                  Container(width: 46, height: 46, alignment: Alignment.center, decoration: BoxDecoration(color: scheme.primary.withOpacity(.18), shape: BoxShape.circle), child: Text(achievement.icon, style: const TextStyle(fontSize: 23))),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('ACHIEVEMENT UNLOCKED', style: TextStyle(color: scheme.primary, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.05)),
+                    const SizedBox(height: 2),
+                    Text(achievement.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Text(achievement.description, style: TextStyle(color: _muted(context), fontSize: 12)),
+                  ])),
+                  TextButton(onPressed: _dismissAchievementToast, child: const Text('NICE')),
+                ]),
+              ),
+            ),
+          );
+        },
+      );
+
+}
+
+void _showAchievementToast(AchievementNotice achievement) {
+  _achievementToastTimer?.cancel();
+  _achievementToast.value = achievement;
+  _achievementToastTimer = Timer(const Duration(seconds: 6), _dismissAchievementToast);
+}
+
+void _dismissAchievementToast() {
+  _achievementToastTimer?.cancel();
+  _achievementToast.value = null;
 }
 
 ThemeData _nightTheme() {
@@ -1689,7 +1741,9 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
   Timer? timer;
   int current = 0;
   int seconds = 45;
+  int elapsedSeconds = 0;
   bool paused = false;
+  bool _completed = false;
 
   @override
   void initState() {
@@ -1701,14 +1755,39 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
 
   void nextSecond() {
     if (seconds > 1) {
-      setState(() => seconds--);
+      setState(() {
+        seconds--;
+        elapsedSeconds++;
+      });
     } else if (current < widget.workout.exercises.length - 1) {
-      setState(() { current++; seconds = 45; });
+      setState(() {
+        current++;
+        seconds = 45;
+        elapsedSeconds++;
+      });
     } else {
-      timer?.cancel();
-      context.read<FitLifeStore>().completeWorkout(widget.workout);
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      elapsedSeconds++;
+      _finishWorkout();
     }
+  }
+
+  void _skipExercise() {
+    if (current < widget.workout.exercises.length - 1) {
+      setState(() {
+        current++;
+        seconds = 45;
+      });
+    } else {
+      _finishWorkout();
+    }
+  }
+
+  void _finishWorkout() {
+    if (_completed) return;
+    _completed = true;
+    timer?.cancel();
+    final achievement = context.read<FitLifeStore>().completeWorkout(widget.workout);
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => WorkoutCompletePage(workout: widget.workout, elapsedSeconds: elapsedSeconds, achievement: achievement)));
   }
 
   @override
@@ -1730,34 +1809,108 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(widget.workout.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)), Text('Exercise ${current + 1} of $total · ${45 - seconds}s elapsed', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12))])),
           ])),
           Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: LinearProgressIndicator(value: progress, minHeight: 7, borderRadius: BorderRadius.circular(8), backgroundColor: _elevated(context), color: Theme.of(context).colorScheme.primary)),
-          Expanded(child: Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7), decoration: BoxDecoration(color: _elevated(context), borderRadius: BorderRadius.circular(30)), child: Text('WORK', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.4))),
-            const SizedBox(height: 24),
-            Text(widget.workout.exercises[current], textAlign: TextAlign.center, style: GoogleFonts.archivo(fontSize: 32, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 28),
-            Builder(builder: (context) {
-              final ringSize = (MediaQuery.sizeOf(context).width * .82).clamp(270.0, 340.0).toDouble();
-              return SizedBox(width: ringSize, height: ringSize, child: Stack(alignment: Alignment.center, children: [
-                Positioned.fill(child: Padding(padding: EdgeInsets.all(ringSize * .026), child: CircularProgressIndicator(value: seconds / 45, strokeWidth: ringSize * .052, backgroundColor: _elevated(context), color: Theme.of(context).colorScheme.primary))),
+          Expanded(child: LayoutBuilder(builder: (context, constraints) {
+            final widthBasedRing = MediaQuery.sizeOf(context).width * .82;
+            final heightBasedRing = math.max(170.0, constraints.maxHeight - 250);
+            final ringSize = math.min(widthBasedRing, heightBasedRing).clamp(170.0, 340.0).toDouble();
+            return Center(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7), decoration: BoxDecoration(color: _elevated(context), borderRadius: BorderRadius.circular(30)), child: Text('WORK', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.4))),
+              const SizedBox(height: 20),
+              SizedBox(width: double.infinity, child: FittedBox(fit: BoxFit.scaleDown, child: Text(widget.workout.exercises[current], textAlign: TextAlign.center, style: GoogleFonts.archivo(fontSize: 32, fontWeight: FontWeight.w900)))),
+              const SizedBox(height: 22),
+              SizedBox(width: ringSize, height: ringSize, child: Stack(alignment: Alignment.center, children: [
+                Positioned.fill(child: Padding(padding: EdgeInsets.all(ringSize * .026), child: CircularProgressIndicator(value: seconds / 45, strokeWidth: ringSize * .090, backgroundColor: _elevated(context), color: Theme.of(context).colorScheme.primary))),
                 Column(mainAxisSize: MainAxisSize.min, children: [
-                  SizedBox(width: ringSize * .64, child: FittedBox(fit: BoxFit.scaleDown, child: Text('00:${seconds.toString().padLeft(2, '0')}', textScaler: TextScaler.noScaling, style: GoogleFonts.archivo(fontSize: ringSize * .19, fontWeight: FontWeight.w900)))),
+                  SizedBox(width: ringSize * .64, child: FittedBox(fit: BoxFit.scaleDown, child: Text('${seconds}S', textScaler: TextScaler.noScaling, style: GoogleFonts.archivo(fontSize: ringSize * .19, fontWeight: FontWeight.w900)))),
                   SizedBox(height: ringSize * .012),
-                  const Text('REMAINING', textScaler: TextScaler.noScaling, style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 10, letterSpacing: 1.1, fontWeight: FontWeight.w700)),
+                  Text('REMAINING', textScaler: TextScaler.noScaling, style: TextStyle(color: _muted(context), fontSize: ringSize * .03, letterSpacing: 1.1, fontWeight: FontWeight.w700)),
                 ]),
-              ]));
-            }),
-            const SizedBox(height: 24),
-            const Text('Move with control and maintain a comfortable breathing pace.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFAFBBB3))),
-          ])))),
+              ])),
+              const SizedBox(height: 20),
+              Text(exerciseInstructions[widget.workout.exercises[current]] ?? 'Move with control and maintain a comfortable breathing pace.', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: _muted(context))),
+            ])));
+          })),
           Container(padding: const EdgeInsets.fromLTRB(16, 14, 16, 18), decoration: BoxDecoration(border: Border(top: BorderSide(color: _pageBorder(context)))), child: Row(children: [
             Expanded(child: FilledButton.icon(style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)), onPressed: () => setState(() => paused = !paused), icon: Icon(paused ? Icons.play_arrow : Icons.pause), label: Text(paused ? 'RESUME' : 'PAUSE'))),
             const SizedBox(width: 12),
-            OutlinedButton.icon(style: OutlinedButton.styleFrom(minimumSize: const Size(112, 54)), onPressed: nextSecond, icon: const Icon(Icons.skip_next), label: const Text('SKIP')),
+            FilledButton.icon(style: FilledButton.styleFrom(minimumSize: const Size(120, 54), backgroundColor: _elevated(context), foregroundColor: Theme.of(context).colorScheme.onSecondary, elevation: 0), onPressed: _skipExercise, icon: const Icon(Icons.skip_next), label: const Text('SKIP')),
           ])),
         ]),
       ),
     );
   }
+}
+
+class WorkoutCompletePage extends StatelessWidget {
+  const WorkoutCompletePage({super.key, required this.workout, required this.elapsedSeconds, this.achievement});
+  final Workout workout;
+  final int elapsedSeconds;
+  final AchievementNotice? achievement;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final minutes = elapsedSeconds ~/ 60;
+    final seconds = elapsedSeconds % 60;
+    final duration = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle, boxShadow: [BoxShadow(color: scheme.primary.withOpacity(.25), blurRadius: 24, offset: const Offset(0, 10))]),
+                child: Icon(Icons.check, color: scheme.onPrimary, size: 50),
+              ),
+              const SizedBox(height: 24),
+              Text('WORKOUT COMPLETE', textAlign: TextAlign.center, style: GoogleFonts.archivo(fontSize: 31, fontWeight: FontWeight.w900, letterSpacing: -.8)),
+              const SizedBox(height: 5),
+              Text(workout.name, style: TextStyle(color: _muted(context), fontSize: 15)),
+              const SizedBox(height: 28),
+              Row(children: [
+                Expanded(child: _CompletionStat(label: 'TIME', value: duration)),
+                const SizedBox(width: 10),
+                Expanded(child: _CompletionStat(label: 'EXERCISES', value: '${workout.exercises.length}')),
+                const SizedBox(width: 10),
+                const Expanded(child: _CompletionStat(label: 'XP EARNED', value: '+50')),
+              ]),
+              const SizedBox(height: 28),
+              SizedBox(width: double.infinity, height: 52, child: FilledButton(onPressed: () => _leaveCompletePage(context, 0), style: FilledButton.styleFrom(elevation: 2, shadowColor: const Color(0x33000000)), child: const Text('BACK TO HOME'))),
+              const SizedBox(height: 10),
+              SizedBox(width: double.infinity, height: 52, child: FilledButton(onPressed: () => _leaveCompletePage(context, 1), style: FilledButton.styleFrom(backgroundColor: _elevated(context), foregroundColor: scheme.onSecondary, elevation: 2, shadowColor: const Color(0x33000000)), child: const Text('PICK ANOTHER WORKOUT'))),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _leaveCompletePage(BuildContext context, int destination) {
+    _shellNavigation.value = destination;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (achievement != null) Future<void>.delayed(const Duration(milliseconds: 240), () => _showAchievementToast(achievement!));
+  }
+}
+
+class _CompletionStat extends StatelessWidget {
+  const _CompletionStat({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 7),
+          child: Column(children: [
+            Text(value, textScaler: TextScaler.noScaling, style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 4),
+            Text(label, textAlign: TextAlign.center, style: TextStyle(color: _muted(context), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .7)),
+          ]),
+        ),
+      );
 }
 
 Widget _choice(List<String> values, String selected, ValueChanged<String> onSelected) => Wrap(spacing: 8, runSpacing: 8, children: values.map((value) => ChoiceChip(label: Text(value), selected: value == selected, onSelected: (_) => onSelected(value))).toList());
