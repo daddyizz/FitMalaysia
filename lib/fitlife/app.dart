@@ -6,8 +6,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'app_store.dart';
+import 'ad_banner.dart';
 import 'data.dart';
 import 'models.dart';
+import 'privacy_consent.dart';
 
 const _green = Color(0xFF138A5B);
 const _buttonTextLift = Shadow(color: Color(0x660B2613), blurRadius: 1.6, offset: Offset(0, 1));
@@ -342,6 +344,7 @@ class HomePage extends StatelessWidget {
         Text('LAST 7 DAYS', style: TextStyle(color: _sectionLabel(context), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         const SizedBox(height: 10),
         _WeekActivity(history: store.history),
+        const HomeAdBanner(),
       ]),
         ValueListenableBuilder<bool>(
           valueListenable: _waterToastVisible,
@@ -1416,6 +1419,29 @@ class SettingsPage extends StatelessWidget {
             Divider(height: 1, color: _pageBorder(context)),
             _SettingToggle(label: 'Workout Reminders', description: 'Daily prompt to keep your streak alive', value: store.workoutReminders, onChanged: (value) => store.updatePreferences(workout: value)),
           ]))),
+          AnimatedBuilder(
+            animation: PrivacyConsent.instance,
+            builder: (context, _) {
+              if (!PrivacyConsent.instance.privacyOptionsRequired) return const SizedBox.shrink();
+              return Column(children: [
+                const SizedBox(height: 12),
+                Card(child: InkWell(
+                  onTap: PrivacyConsent.instance.showPrivacyOptions,
+                  borderRadius: BorderRadius.circular(18),
+                  child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
+                    Icon(Icons.privacy_tip_outlined, color: scheme.primary),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Privacy options', style: GoogleFonts.archivo(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -.25)),
+                      const SizedBox(height: 3),
+                      Text('Manage advertising and consent choices', style: TextStyle(color: _muted(context), fontSize: 12)),
+                    ])),
+                    Icon(Icons.chevron_right, color: _muted(context)),
+                  ])),
+                )),
+              ]);
+            },
+          ),
           const SizedBox(height: 12),
           Card(key: const ValueKey('settings-data-card'), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Your Data', style: GoogleFonts.archivo(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -.25)),
