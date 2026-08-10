@@ -10,6 +10,7 @@ import 'data.dart';
 import 'models.dart';
 
 const _green = Color(0xFF138A5B);
+const _nutritionDisclaimer = 'This is general educational information only and is not medical or dietary advice. Individual needs vary. Speak to a qualified doctor or registered dietitian before making significant changes, especially if you have a health condition, are pregnant, or take medication.';
 
 class FitLifeApp extends StatelessWidget {
   const FitLifeApp({super.key});
@@ -911,23 +912,64 @@ class NutritionPage extends StatelessWidget {
   const NutritionPage({super.key});
 
   @override
+  Widget build(BuildContext context) => AppPage(
+        title: 'Nutrition',
+        subtitle: 'Fuel and hydration basics',
+        child: ListView(padding: const EdgeInsets.all(16), children: [
+          const _NutritionWaterCard(),
+          const SizedBox(height: 22),
+          Text('Nutrition guides', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          ...nutritionArticles.map((article) => Padding(padding: const EdgeInsets.only(bottom: 8), child: _NutritionArticleTile(article: article))),
+          const SizedBox(height: 8),
+          const Text(_nutritionDisclaimer, style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, height: 1.4)),
+        ]),
+      );
+}
+
+class _NutritionWaterCard extends StatelessWidget {
+  const _NutritionWaterCard();
+
+  @override
   Widget build(BuildContext context) {
-    final items = <Widget>[const WaterCard()];
-    for (final article in nutritionArticles) {
-      items.add(_NutritionArticleTile(article: article));
-    }
-    items.add(const Padding(
-      padding: EdgeInsets.all(8),
-      child: Text(
-        'Nutrition information is general education and not medical advice.',
-        style: TextStyle(fontSize: 12),
+    final store = context.watch<FitLifeStore>();
+    final fraction = (store.waterToday / store.waterTarget).clamp(0, 1).toDouble();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Water intake', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 2),
+              Text('${store.waterToday} of ${store.waterTarget} glasses today', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)),
+            ])),
+            const Icon(Icons.water_drop_outlined, color: Color(0xFF77BEFF), size: 27),
+          ]),
+          const SizedBox(height: 14),
+          LinearProgressIndicator(value: fraction, minHeight: 9, borderRadius: BorderRadius.circular(10), backgroundColor: const Color(0xFF303530), color: const Color(0xFF77BEFF)),
+          const SizedBox(height: 16),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            _WaterButton(icon: Icons.remove, enabled: store.waterToday > 0, onTap: () => store.addWater(-1)),
+            SizedBox(width: 76, child: Text('${store.waterToday}', textAlign: TextAlign.center, style: GoogleFonts.archivo(fontSize: 30, fontWeight: FontWeight.w900))),
+            _WaterButton(icon: Icons.add, onTap: () => store.addWater(1)),
+          ]),
+          const SizedBox(height: 10),
+          Wrap(spacing: 2, children: List.generate(store.waterTarget, (index) => Icon(Icons.water_drop, size: 18, color: index < store.waterToday ? const Color(0xFF77BEFF) : const Color(0xFF77BEFF).withOpacity(.23)))),
+        ]),
       ),
-    ));
-    return AppPage(
-      title: 'Nutrition',
-      child: ListView(padding: const EdgeInsets.all(16), children: items),
     );
   }
+}
+
+class _WaterButton extends StatelessWidget {
+  const _WaterButton({required this.icon, required this.onTap, this.enabled = true});
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(width: 48, height: 48, child: Material(color: const Color(0xFF303530), shape: const CircleBorder(), child: InkWell(onTap: enabled ? onTap : null, customBorder: const CircleBorder(), child: Icon(icon, color: enabled ? const Color(0xFFF1F5F1) : const Color(0xFF66706A)))));
 }
 
 class _NutritionArticleTile extends StatelessWidget {
@@ -936,45 +978,83 @@ class _NutritionArticleTile extends StatelessWidget {
   final NutritionArticle article;
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Text(article.icon, style: const TextStyle(fontSize: 26)),
-        title: Text(article.title),
-        subtitle: Text(article.summary),
-        onTap: () => showDialog<void>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(article.title),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(article.details),
-                  const SizedBox(height: 18),
-                  const Text('Benefits', style: TextStyle(fontWeight: FontWeight.w800)),
-                  ...article.benefits.map((item) => Padding(padding: const EdgeInsets.only(top: 6), child: Text('• $item'))),
-                  const SizedBox(height: 18),
-                  const Text('Examples', style: TextStyle(fontWeight: FontWeight.w800)),
-                  ...article.examples.map((item) => Padding(padding: const EdgeInsets.only(top: 6), child: Text('• $item'))),
-                  const SizedBox(height: 18),
-                  const Text('Practical tips', style: TextStyle(fontWeight: FontWeight.w800)),
-                  ...article.tips.map((item) => Padding(padding: const EdgeInsets.only(top: 6), child: Text('• $item'))),
-                ],
-              ),
+  Widget build(BuildContext context) => Material(
+        color: const Color(0xFF252925),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => NutritionDetailPage(article: article))),
+          borderRadius: BorderRadius.circular(16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 76),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(children: [
+                Text(article.icon, style: const TextStyle(fontSize: 27)),
+                const SizedBox(width: 12),
+                Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(article.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 3),
+                  Text(article.summary, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)),
+                ])),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right, color: Color(0xFFAFBBB3)),
+              ]),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Close'),
-              ),
-            ],
           ),
         ),
-      ),
-    );
-  }
+      );
+}
+
+class NutritionDetailPage extends StatelessWidget {
+  const NutritionDetailPage({super.key, required this.article});
+  final NutritionArticle article;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: Column(children: [
+          Container(
+            color: const Color(0xFF171A17),
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(8, 10, 16, 10),
+                decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0x26FFFFFF)))),
+                child: Row(children: [
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back)),
+                  const SizedBox(width: 4),
+                  Expanded(child: Text(article.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900))),
+                ]),
+              ),
+            ),
+          ),
+          Expanded(child: ListView(padding: const EdgeInsets.all(16), children: [
+            Card(child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [Text(article.icon, style: const TextStyle(fontSize: 40)), const SizedBox(width: 14), Expanded(child: Text(article.summary, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 14, height: 1.35)))]))),
+            const SizedBox(height: 18),
+            Text(article.details, style: const TextStyle(fontSize: 14, height: 1.55)),
+            const SizedBox(height: 20),
+            _NutritionSection(title: 'Why it matters', items: article.benefits),
+            const SizedBox(height: 12),
+            _NutritionSection(title: 'Good sources', items: article.examples),
+            const SizedBox(height: 12),
+            _NutritionSection(title: 'Practical tips', items: article.tips),
+            const SizedBox(height: 18),
+            const Text(_nutritionDisclaimer, style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, height: 1.4)),
+          ])),
+        ]),
+      );
+}
+
+class _NutritionSection extends StatelessWidget {
+  const _NutritionSection({required this.title, required this.items});
+  final String title;
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Text(title, style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+    const SizedBox(height: 10),
+    ...items.map((item) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('•', style: TextStyle(color: Color(0xFFBCF04B), fontWeight: FontWeight.w900)), const SizedBox(width: 8), Expanded(child: Text(item, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 14, height: 1.35)))]))),
+  ])));
 }
 
 class ProfilePage extends StatelessWidget {
