@@ -490,7 +490,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     return AppPage(
       title: 'Workouts',
       subtitle: '${listed.length} of ${workouts.length} workouts',
-      actions: [IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favorites are saved with the heart button.'))), icon: const Icon(Icons.favorite_outline)), IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workout history is shown in Progress.'))), icon: const Icon(Icons.history))],
+      actions: [IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favorites are saved with the heart button.'))), icon: const Icon(Icons.favorite_outline)), IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WorkoutHistoryPage())), icon: const Icon(Icons.history))],
       child: ListView(padding: const EdgeInsets.only(bottom: 108), children: [
         Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 8), child: Row(children: [Expanded(child: TextField(onChanged: (value) => setState(() => query = value), decoration: InputDecoration(prefixIcon: const Icon(Icons.search), suffixIcon: query.isEmpty ? null : IconButton(onPressed: () => setState(() => query = ''), icon: const Icon(Icons.close)), hintText: 'Search workouts, muscles, equipment...'))), const SizedBox(width: 8), SizedBox(height: 48, width: 48, child: FilledButton(onPressed: () => setState(() => showFilters = !showFilters), style: FilledButton.styleFrom(padding: EdgeInsets.zero, backgroundColor: showFilters ? const Color(0xFFBCF04B) : const Color(0xFF303530), foregroundColor: showFilters ? const Color(0xFF182318) : const Color(0xFFF1F5F1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Icon(Icons.tune)))])),
         SizedBox(
@@ -659,7 +659,7 @@ class _ProgressPageState extends State<ProgressPage> {
           _ProgressTab(label: 'AWARDS', active: tab == 2, onTap: () => setState(() => tab = 2)),
         ])),
         const SizedBox(height: 16),
-        if (tab == 0) _ProgressActivity(weekWorkouts: weekWorkouts, history: store.history, totalMinutes: store.totalMinutes, totalCalories: store.totalCalories),
+        if (tab == 0) _ProgressActivity(weekWorkouts: weekWorkouts, weeklyTarget: store.weeklyWorkoutTarget, history: store.history, totalMinutes: store.totalMinutes, totalCalories: store.totalCalories),
         if (tab == 1) const _ProgressBody(),
         if (tab == 2) _ProgressAwards(workoutsCompleted: store.history.length, xp: store.xp),
       ]),
@@ -691,14 +691,14 @@ class _ProgressTab extends StatelessWidget {
 }
 
 class _ProgressActivity extends StatelessWidget {
-  const _ProgressActivity({required this.weekWorkouts, required this.history, required this.totalMinutes, required this.totalCalories});
-  final int weekWorkouts, totalMinutes, totalCalories;
+  const _ProgressActivity({required this.weekWorkouts, required this.weeklyTarget, required this.history, required this.totalMinutes, required this.totalCalories});
+  final int weekWorkouts, weeklyTarget, totalMinutes, totalCalories;
   final List<WorkoutLog> history;
 
   @override
   Widget build(BuildContext context) => Column(children: [
     Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('This week', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 2), Text('$weekWorkouts of 3 target workouts', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)), const SizedBox(height: 12), _WeekActivity(history: history),
+      Text('This week', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 2), Text('$weekWorkouts of $weeklyTarget target workouts', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)), const SizedBox(height: 12), _WeekActivity(history: history),
     ]))),
     const SizedBox(height: 12),
     Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -1080,13 +1080,149 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
+    final streak = _currentStreak(store.history);
     return AppPage(
       title: 'Profile',
+      subtitle: store.name.isEmpty ? 'FitLife member' : store.name,
+      actions: [Container(width: 40, height: 40, decoration: const BoxDecoration(color: Color(0xFF303530), shape: BoxShape.circle), child: IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings are available below.'))), icon: const Icon(Icons.settings_outlined)))],
       child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
-        Card(child: ListTile(leading: CircleAvatar(child: Text(store.name.isEmpty ? 'F' : store.name[0])), title: Text(store.name), subtitle: Text('${store.fitnessLevel} · ${store.goal}'))),
-        Card(child: ListTile(title: const Text('Log weight'), subtitle: Text(store.weightKg == null ? 'No weight recorded' : '${store.weightKg} kg'), onTap: () => logWeight(context))),
-        Card(child: SwitchListTile(title: const Text('Dark mode'), value: store.darkMode, onChanged: store.setDarkMode)),
+        Card(child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
+          Container(width: 64, height: 64, alignment: Alignment.center, decoration: const BoxDecoration(color: Color(0xFFBCF04B), shape: BoxShape.circle), child: Text((store.name.isEmpty ? 'F' : store.name[0]).toUpperCase(), style: GoogleFonts.archivo(color: const Color(0xFF182318), fontSize: 25, fontWeight: FontWeight.w900))),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(store.name.isEmpty ? 'FitLife member' : store.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.archivo(fontSize: 19, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 3),
+            Text('Level ${store.level} · ${store.xp} XP · ${store.fitnessLevel}', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)),
+            const SizedBox(height: 9),
+            LinearProgressIndicator(value: (store.xp % 100) / 100, minHeight: 7, borderRadius: BorderRadius.circular(9), backgroundColor: const Color(0xFF303530), color: const Color(0xFFBCF04B)),
+          ])),
+        ]))),
+        const SizedBox(height: 12),
+        GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, childAspectRatio: 1.45, crossAxisSpacing: 10, mainAxisSpacing: 10, children: [
+          _ProgressStat(label: 'WORKOUTS', value: '${store.history.length}', hint: 'All time', icon: Icons.emoji_events_outlined, color: const Color(0xFFBCF04B)),
+          _ProgressStat(label: 'STREAK', value: '$streak d', hint: 'Current streak', icon: Icons.local_fire_department_outlined, color: const Color(0xFFFFA66D)),
+          _ProgressStat(label: 'TOTAL TIME', value: '${store.totalMinutes}m', hint: 'All time', icon: Icons.timer_outlined, color: const Color(0xFFF1F5F1)),
+          _ProgressStat(label: 'CALORIES', value: '${store.totalCalories}', hint: 'Estimated', icon: Icons.local_fire_department_outlined, color: const Color(0xFFFFA66D)),
+        ]),
+        const SizedBox(height: 18),
+        Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Your details', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 14),
+          TextFormField(initialValue: store.name, onChanged: (value) => context.read<FitLifeStore>().updateProfile(profileName: value), decoration: const InputDecoration(labelText: 'Name')),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: TextFormField(initialValue: store.heightCm?.toStringAsFixed(0) ?? '', keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (value) { final parsed = double.tryParse(value.replaceAll(',', '.')); if (parsed != null) context.read<FitLifeStore>().updateProfile(height: parsed); }, decoration: const InputDecoration(labelText: 'Height (cm)'))),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Weight (kg)', style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)), const SizedBox(height: 6), SizedBox(width: double.infinity, child: FilledButton(onPressed: () => logWeight(context), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF303530), foregroundColor: const Color(0xFFF1F5F1), elevation: 0, alignment: Alignment.centerLeft), child: Text(store.weightKg == null ? 'LOG WEIGHT' : '${store.weightKg!.toStringAsFixed(1)} kg')))])),
+          ]),
+          const SizedBox(height: 18),
+          const Text('Fitness level', style: TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: ['Beginner', 'Intermediate', 'Advanced'].map((value) => _ProfileChoiceChip(label: value, active: store.fitnessLevel == value, onTap: () => store.updateProfile(level: value))).toList()),
+          const SizedBox(height: 18),
+          const Text('Goal', style: TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: ['Lose Weight', 'Build Muscle', 'Improve Fitness', 'Increase Strength', 'Improve Endurance', 'Stay Active'].map((value) => _ProfileChoiceChip(label: value, active: store.goal == value, onTap: () => store.updateProfile(profileGoal: value))).toList()),
+        ]))),
+        const SizedBox(height: 12),
+        Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Targets', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 16),
+          const Text('Workouts per week', style: TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [2, 3, 4, 5, 6, 7].map((value) => _ProfileChoiceChip(label: '$value', active: store.weeklyWorkoutTarget == value, onTap: () => store.setWeeklyWorkoutTarget(value))).toList()),
+          const SizedBox(height: 18),
+          const Row(children: [Icon(Icons.water_drop_outlined, color: Color(0xFF77BEFF), size: 18), SizedBox(width: 6), Text('Glasses of water per day', style: TextStyle(fontWeight: FontWeight.w700))]), const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [6, 8, 10, 12].map((value) => _ProfileChoiceChip(label: '$value', active: store.waterTarget == value, onTap: () => store.setWaterTarget(value))).toList()),
+        ]))),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(style: OutlinedButton.styleFrom(alignment: Alignment.centerLeft, minimumSize: const Size.fromHeight(50)), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WorkoutHistoryPage())), icon: const Icon(Icons.notifications_none), label: const Text('WORKOUT HISTORY')),
+        const SizedBox(height: 8),
+        Card(child: SwitchListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 16), title: const Text('Settings & data', style: TextStyle(fontWeight: FontWeight.w700)), subtitle: const Text('Dark mode'), value: store.darkMode, onChanged: store.setDarkMode)),
       ]),
+    );
+  }
+}
+
+class _ProfileChoiceChip extends StatelessWidget {
+  const _ProfileChoiceChip({required this.label, required this.active, required this.onTap});
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => IntrinsicWidth(
+        child: Material(
+          color: active ? const Color(0xFF2E4A24) : const Color(0xFF252925),
+          borderRadius: BorderRadius.circular(999),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), border: Border.all(color: active ? const Color(0xFFBCF04B) : const Color(0x26FFFFFF))),
+              alignment: Alignment.center,
+              child: Text(label, textScaler: TextScaler.noScaling, style: TextStyle(color: active ? const Color(0xFFBCF04B) : const Color(0xFFF1F5F1), fontSize: 13, fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+            ),
+          ),
+        ),
+      );
+}
+
+class WorkoutHistoryPage extends StatelessWidget {
+  const WorkoutHistoryPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final history = [...context.watch<FitLifeStore>().history]..sort((a, b) => b.completedAt.compareTo(a.completedAt));
+    return Scaffold(
+      extendBody: true,
+      body: Column(children: [
+        Container(
+          color: const Color(0xFF171A17),
+          child: SafeArea(
+            bottom: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0x26FFFFFF)))),
+              child: Row(children: [
+                Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xCC252925), border: Border.all(color: const Color(0x26FFFFFF)), shape: BoxShape.circle), child: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back))),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('History', style: GoogleFonts.archivo(fontSize: 21, fontWeight: FontWeight.w900)),
+                  Text('${history.length} completed', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, fontWeight: FontWeight.w600)),
+                ])),
+              ]),
+            ),
+          ),
+        ),
+        Expanded(
+          child: history.isEmpty
+              ? Center(child: Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Text('📋', style: TextStyle(fontSize: 42)), const SizedBox(height: 12), Text('No workouts logged', style: GoogleFonts.archivo(fontSize: 21, fontWeight: FontWeight.w900)), const SizedBox(height: 6), const Text('Finish your first session and it will appear here.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 14)), const SizedBox(height: 18), FilledButton(onPressed: () { _shellNavigation.value = 1; Navigator.of(context).popUntil((route) => route.isFirst); }, child: const Text('START A WORKOUT')),
+                ])))
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+                  itemCount: history.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final entry = history[index];
+                    final date = '${entry.completedAt.year.toString().padLeft(4, '0')}-${entry.completedAt.month.toString().padLeft(2, '0')}-${entry.completedAt.day.toString().padLeft(2, '0')}';
+                    return Card(child: Padding(padding: const EdgeInsets.all(12), child: Row(children: [
+                      Container(width: 40, height: 40, alignment: Alignment.center, decoration: const BoxDecoration(color: Color(0xFF2E4A24), shape: BoxShape.circle), child: const Text('💪', style: TextStyle(fontSize: 19))),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(entry.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 3), Text('$date · ${entry.minutes} min · ${entry.calories} kcal', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12))])),
+                      const SizedBox(width: 8),
+                      Text('+${entry.xp} XP', style: const TextStyle(color: Color(0xFFBCF04B), fontWeight: FontWeight.w800, fontSize: 13)),
+                    ])));
+                  },
+                ),
+        ),
+      ]),
+      bottomNavigationBar: _GlassBottomNav(
+        selectedIndex: 1,
+        onSelected: (value) {
+          _shellNavigation.value = value;
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+      ),
     );
   }
 }

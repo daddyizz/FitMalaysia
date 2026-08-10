@@ -15,6 +15,7 @@ class FitLifeStore extends ChangeNotifier {
   String goal = 'Improve Fitness';
   double? heightCm;
   double? weightKg;
+  int weeklyWorkoutTarget = 3;
   int waterTarget = 8;
   int waterToday = 0;
   int xp = 0;
@@ -40,6 +41,7 @@ class FitLifeStore extends ChangeNotifier {
       goal = data['goal'] as String? ?? goal;
       heightCm = (data['heightCm'] as num?)?.toDouble();
       weightKg = (data['weightKg'] as num?)?.toDouble();
+      weeklyWorkoutTarget = data['weeklyWorkoutTarget'] as int? ?? weeklyWorkoutTarget;
       waterTarget = data['waterTarget'] as int? ?? waterTarget;
       waterToday = data['waterToday'] as int? ?? 0;
       xp = data['xp'] as int? ?? 0;
@@ -56,7 +58,7 @@ class FitLifeStore extends ChangeNotifier {
   Future<void> _save() async {
     await _preferences?.setString(_key, jsonEncode({
       'onboarded': onboarded, 'name': name, 'fitnessLevel': fitnessLevel, 'goal': goal,
-      'heightCm': heightCm, 'weightKg': weightKg, 'waterTarget': waterTarget, 'waterToday': waterToday,
+      'heightCm': heightCm, 'weightKg': weightKg, 'weeklyWorkoutTarget': weeklyWorkoutTarget, 'waterTarget': waterTarget, 'waterToday': waterToday,
       'xp': xp, 'darkMode': darkMode, 'designVersion': 2, 'favorites': favorites, 'weights': weights,
       'history': history.map((item) => item.toJson()).toList(),
     }));
@@ -73,8 +75,9 @@ class FitLifeStore extends ChangeNotifier {
   void toggleFavorite(String id) { favorites.contains(id) ? favorites.remove(id) : favorites.add(id); _changed(); }
   void completeWorkout(Workout workout) { history.insert(0, WorkoutLog(name: workout.name, completedAt: DateTime.now(), minutes: workout.minutes, calories: workout.calories, xp: 50)); xp += 50; _changed(); }
   void setDarkMode(bool value) { darkMode = value; _changed(); }
+  void setWeeklyWorkoutTarget(int value) { weeklyWorkoutTarget = value; _changed(); }
   void setWaterTarget(int value) { waterTarget = value; _changed(); }
   void resetProgress() { waterToday = 0; xp = 0; history.clear(); weights.clear(); _changed(); }
-  Future<void> resetEverything() async { await _preferences?.remove(_key); onboarded = false; name = ''; fitnessLevel = 'Beginner'; goal = 'Improve Fitness'; heightCm = null; weightKg = null; waterTarget = 8; waterToday = 0; xp = 0; darkMode = true; favorites.clear(); history.clear(); weights.clear(); notifyListeners(); }
+  Future<void> resetEverything() async { await _preferences?.remove(_key); onboarded = false; name = ''; fitnessLevel = 'Beginner'; goal = 'Improve Fitness'; heightCm = null; weightKg = null; weeklyWorkoutTarget = 3; waterTarget = 8; waterToday = 0; xp = 0; darkMode = true; favorites.clear(); history.clear(); weights.clear(); notifyListeners(); }
   void _changed() { _save(); notifyListeners(); }
 }
