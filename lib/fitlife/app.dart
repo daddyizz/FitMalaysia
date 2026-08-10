@@ -11,6 +11,7 @@ import 'models.dart';
 
 const _green = Color(0xFF138A5B);
 const _nutritionDisclaimer = 'This is general educational information only and is not medical or dietary advice. Individual needs vary. Speak to a qualified doctor or registered dietitian before making significant changes, especially if you have a health condition, are pregnant, or take medication.';
+final _shellNavigation = ValueNotifier<int>(0);
 
 class FitLifeApp extends StatelessWidget {
   const FitLifeApp({super.key});
@@ -115,16 +116,17 @@ class FitLifeShell extends StatefulWidget {
 }
 
 class _FitLifeShellState extends State<FitLifeShell> {
-  int index = 0;
   final pages = const [HomePage(), WorkoutsPage(), ProgressPage(), NutritionPage(), ProfilePage()];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(child: IndexedStack(index: index, children: pages)),
-      bottomNavigationBar: _GlassBottomNav(selectedIndex: index, onSelected: (value) => setState(() => index = value)),
-    );
-  }
+  Widget build(BuildContext context) => ValueListenableBuilder<int>(
+        valueListenable: _shellNavigation,
+        builder: (context, index, _) => Scaffold(
+          extendBody: true,
+          body: SafeArea(child: IndexedStack(index: index, children: pages)),
+          bottomNavigationBar: _GlassBottomNav(selectedIndex: index, onSelected: (value) => _shellNavigation.value = value),
+        ),
+      );
 }
 
 class _GlassBottomNav extends StatelessWidget {
@@ -148,14 +150,14 @@ class _GlassBottomNav extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(32),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
             child: Container(
               height: 62,
               decoration: BoxDecoration(
-                color: const Color(0xD9252925),
+                color: const Color(0xAD252925),
                 borderRadius: BorderRadius.circular(32),
                 border: Border.all(color: const Color(0x26FFFFFF)),
-                boxShadow: const [BoxShadow(color: Color(0x44000000), blurRadius: 20, offset: Offset(0, 8))],
+                boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 22, offset: Offset(0, 8))],
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: Row(children: [
@@ -206,6 +208,7 @@ class AppPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        extendBody: true,
         body: Column(children: [
           Container(
             color: const Color(0xFF171A17),
@@ -1011,6 +1014,7 @@ class NutritionDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        extendBody: true,
         body: Column(children: [
           Container(
             color: const Color(0xFF171A17),
@@ -1027,7 +1031,7 @@ class NutritionDetailPage extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(child: ListView(padding: const EdgeInsets.all(16), children: [
+          Expanded(child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
             Card(child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [Text(article.icon, style: const TextStyle(fontSize: 40)), const SizedBox(width: 14), Expanded(child: Text(article.summary, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 14, height: 1.35)))]))),
             const SizedBox(height: 18),
             Text(article.details, style: const TextStyle(fontSize: 14, height: 1.55)),
@@ -1041,6 +1045,17 @@ class NutritionDetailPage extends StatelessWidget {
             const Text(_nutritionDisclaimer, style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, height: 1.4)),
           ])),
         ]),
+        bottomNavigationBar: _GlassBottomNav(
+          selectedIndex: 3,
+          onSelected: (value) {
+            if (value == 3) {
+              Navigator.pop(context);
+            } else {
+              _shellNavigation.value = value;
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            }
+          },
+        ),
       );
 }
 
