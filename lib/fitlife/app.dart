@@ -22,7 +22,7 @@ class FitLifeApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'FitLife',
-      themeMode: store.darkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: store.themePreference == 'system' ? ThemeMode.system : store.themePreference == 'light' ? ThemeMode.light : ThemeMode.dark,
       theme: _lightTheme(),
       darkTheme: _nightTheme(),
       home: store.onboarded ? const FitLifeShell() : const OnboardingScreen(),
@@ -218,7 +218,7 @@ class AppPage extends StatelessWidget {
                 decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0x26FFFFFF)))),
                 child: Row(children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(title, style: GoogleFonts.archivo(fontSize: 22, fontWeight: FontWeight.w900)),
+                    Text(title.toUpperCase(), style: GoogleFonts.archivo(fontSize: 22, fontWeight: FontWeight.w900)),
                     if (subtitle != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(subtitle!, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, fontWeight: FontWeight.w600))),
                   ])),
                   if (actions != null) ...actions!,
@@ -254,7 +254,7 @@ class HomePage extends StatelessWidget {
           _GoalRing(progress: goalProgress),
           const SizedBox(width: 20),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Move today', style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900)),
+            Text('Move Today', style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900)),
             const SizedBox(height: 4),
             const Text('“Small steps every day become big results.”', style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 14, height: 1.25)),
             const SizedBox(height: 12),
@@ -263,8 +263,8 @@ class HomePage extends StatelessWidget {
         ]))),
         const SizedBox(height: 18),
         Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          const Expanded(child: _SectionHeader(kicker: 'FEATURED SESSION', title: "Today's pick")),
-          TextButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Open the Train tab to browse all workouts.'))), style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6), foregroundColor: const Color(0xFFBCF04B)), child: const Text('SEE ALL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.05))),
+          const Expanded(child: _SectionHeader(kicker: 'FEATURED SESSION', title: "Today's Pick")),
+          TextButton(onPressed: () => _shellNavigation.value = 1, style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6), foregroundColor: const Color(0xFFBCF04B)), child: const Text('SEE ALL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.05))),
         ]),
         const SizedBox(height: 10),
         WorkoutFeatureCard(workout: workout),
@@ -698,11 +698,11 @@ class _ProgressActivity extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
     Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('This week', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 2), Text('$weekWorkouts of $weeklyTarget target workouts', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)), const SizedBox(height: 12), _WeekActivity(history: history),
+      Text('This Week', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 2), Text('$weekWorkouts of $weeklyTarget target workouts', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)), const SizedBox(height: 12), _WeekActivity(history: history),
     ]))),
     const SizedBox(height: 12),
     Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('This month', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 14), Row(children: [
+      Text('This Month', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 14), Row(children: [
         _MonthMetric(label: 'WORKOUTS', value: '$weekWorkouts'), _MonthMetric(label: 'MINUTES', value: '$totalMinutes'), _MonthMetric(label: 'CALORIES', value: '$totalCalories'),
       ]),
     ]))),
@@ -765,7 +765,7 @@ class _ProgressBodyState extends State<_ProgressBody> {
     };
     return Column(children: [
       Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('BMI calculator', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 14),
+        Text('BMI Calculator', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 14),
         Row(children: [
           Expanded(child: TextField(controller: height, onChanged: (_) => setState(() {}), keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Height (cm)', hintText: '175'))),
           const SizedBox(width: 12),
@@ -783,7 +783,7 @@ class _ProgressBodyState extends State<_ProgressBody> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Weight log', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+                Text('Weight Log', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
                 Text(store.weights.isEmpty ? 'No entries yet' : 'Latest: ${store.weights.first.toStringAsFixed(1)} kg', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)),
               ])),
               FilledButton.icon(onPressed: () => logWeight(context), icon: const Icon(Icons.add, size: 16), label: const Text('LOG')),
@@ -923,7 +923,7 @@ class NutritionPage extends StatelessWidget {
         child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
           const _NutritionWaterCard(),
           const SizedBox(height: 22),
-          Text('Nutrition guides', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+          Text('Nutrition Guides', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
           const SizedBox(height: 10),
           ...nutritionArticles.map((article) => Padding(padding: const EdgeInsets.only(bottom: 8), child: _NutritionArticleTile(article: article))),
           const SizedBox(height: 8),
@@ -945,7 +945,7 @@ class _NutritionWaterCard extends StatelessWidget {
         child: Column(children: [
           Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Water intake', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+              Text('Water Intake', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
               const SizedBox(height: 2),
               Text('${store.waterToday} of ${store.waterTarget} glasses today', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)),
             ])),
@@ -1028,7 +1028,7 @@ class NutritionDetailPage extends StatelessWidget {
                 child: Row(children: [
                   IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back)),
                   const SizedBox(width: 4),
-                  Expanded(child: Text(article.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900))),
+                  Expanded(child: Text(article.title.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900))),
                 ]),
               ),
             ),
@@ -1038,11 +1038,11 @@ class NutritionDetailPage extends StatelessWidget {
             const SizedBox(height: 18),
             Text(article.details, style: const TextStyle(fontSize: 14, height: 1.55)),
             const SizedBox(height: 20),
-            _NutritionSection(title: 'Why it matters', items: article.benefits),
+            _NutritionSection(title: 'Why It Matters', items: article.benefits),
             const SizedBox(height: 12),
-            _NutritionSection(title: 'Good sources', items: article.examples),
+            _NutritionSection(title: 'Good Sources', items: article.examples),
             const SizedBox(height: 12),
-            _NutritionSection(title: 'Practical tips', items: article.tips),
+            _NutritionSection(title: 'Practical Tips', items: article.tips),
             const SizedBox(height: 18),
             const Text(_nutritionDisclaimer, style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, height: 1.4)),
           ])),
@@ -1084,7 +1084,7 @@ class ProfilePage extends StatelessWidget {
     return AppPage(
       title: 'Profile',
       subtitle: store.name.isEmpty ? 'Guest' : store.name,
-      actions: [Container(width: 40, height: 40, decoration: const BoxDecoration(color: Color(0xFF303530), shape: BoxShape.circle), child: IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings are available below.'))), icon: const Icon(Icons.settings_outlined)))],
+      actions: [Container(width: 40, height: 40, decoration: const BoxDecoration(color: Color(0xFF303530), shape: BoxShape.circle), child: IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())), icon: const Icon(Icons.settings_outlined)))],
       child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
           Container(width: 64, height: 64, alignment: Alignment.center, decoration: const BoxDecoration(color: Color(0xFFBCF04B), shape: BoxShape.circle), child: Text((store.name.isEmpty ? 'F' : store.name[0]).toUpperCase(), style: GoogleFonts.archivo(color: const Color(0xFF182318), fontSize: 25, fontWeight: FontWeight.w900))),
@@ -1106,7 +1106,7 @@ class ProfilePage extends StatelessWidget {
         ]),
         const SizedBox(height: 18),
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Your details', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+          Text('Your Details', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
           const SizedBox(height: 14),
           TextFormField(initialValue: store.name, onChanged: (value) => context.read<FitLifeStore>().updateProfile(profileName: value), decoration: const InputDecoration(labelText: 'Name')),
           const SizedBox(height: 12),
@@ -1125,7 +1125,7 @@ class ProfilePage extends StatelessWidget {
         const SizedBox(height: 12),
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Targets', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 16),
-          const Text('Workouts per week', style: TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 8),
+          const Text('Workouts Per Week', style: TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8, children: [2, 3, 4, 5, 6, 7].map((value) => _ProfileChoiceChip(label: '$value', active: store.weeklyWorkoutTarget == value, onTap: () => store.setWeeklyWorkoutTarget(value))).toList()),
           const SizedBox(height: 18),
           const Row(children: [Icon(Icons.water_drop_outlined, color: Color(0xFF77BEFF), size: 18), SizedBox(width: 6), Text('Glasses of water per day', style: TextStyle(fontWeight: FontWeight.w700))]), const SizedBox(height: 8),
@@ -1134,7 +1134,7 @@ class ProfilePage extends StatelessWidget {
         const SizedBox(height: 12),
         OutlinedButton.icon(style: OutlinedButton.styleFrom(alignment: Alignment.centerLeft, minimumSize: const Size.fromHeight(50)), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WorkoutHistoryPage())), icon: const Icon(Icons.notifications_none), label: const Text('WORKOUT HISTORY')),
         const SizedBox(height: 8),
-        Card(child: SwitchListTile(contentPadding: const EdgeInsets.symmetric(horizontal: 16), title: const Text('Settings & data', style: TextStyle(fontWeight: FontWeight.w700)), subtitle: const Text('Dark mode'), value: store.darkMode, onChanged: store.setDarkMode)),
+        OutlinedButton.icon(style: OutlinedButton.styleFrom(alignment: Alignment.centerLeft, minimumSize: const Size.fromHeight(50)), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())), icon: const Icon(Icons.settings_outlined), label: const Text('SETTINGS & DATA')),
       ]),
     );
   }
@@ -1186,7 +1186,7 @@ class WorkoutHistoryPage extends StatelessWidget {
                 Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xCC252925), border: Border.all(color: const Color(0x26FFFFFF)), shape: BoxShape.circle), child: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back))),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('History', style: GoogleFonts.archivo(fontSize: 21, fontWeight: FontWeight.w900)),
+                  Text('HISTORY', style: GoogleFonts.archivo(fontSize: 21, fontWeight: FontWeight.w900)),
                   Text('${history.length} completed', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, fontWeight: FontWeight.w600)),
                 ])),
               ]),
@@ -1227,6 +1227,123 @@ class WorkoutHistoryPage extends StatelessWidget {
   }
 }
 
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<FitLifeStore>();
+    return Scaffold(
+      extendBody: true,
+      body: Column(children: [
+        Container(
+          color: const Color(0xFF171A17),
+          child: SafeArea(
+            bottom: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0x26FFFFFF)))),
+              child: Row(children: [
+                Container(width: 40, height: 40, decoration: BoxDecoration(color: const Color(0xCC252925), border: Border.all(color: const Color(0x26FFFFFF)), shape: BoxShape.circle), child: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back))),
+                const SizedBox(width: 12),
+                Text('SETTINGS', style: GoogleFonts.archivo(fontSize: 21, fontWeight: FontWeight.w900)),
+              ]),
+            ),
+          ),
+        ),
+        Expanded(child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
+          Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Appearance', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 14),
+            Row(children: [
+              _AppearanceOption(label: 'Light', active: store.themePreference == 'light', onTap: () => store.setThemePreference('light')),
+              const SizedBox(width: 8),
+              _AppearanceOption(label: 'Dark', active: store.themePreference == 'dark', onTap: () => store.setThemePreference('dark')),
+              const SizedBox(width: 8),
+              _AppearanceOption(label: 'System', active: store.themePreference == 'system', onTap: () => store.setThemePreference('system')),
+            ]),
+          ]))),
+          const SizedBox(height: 12),
+          Card(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Column(children: [
+            Padding(padding: const EdgeInsets.only(top: 16, bottom: 4), child: Align(alignment: Alignment.centerLeft, child: Text('Preferences', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)))),
+            _SettingToggle(label: 'Timer Sounds', description: 'Play a cue when an interval ends', value: store.timerSounds, onChanged: (value) => store.updatePreferences(sounds: value)),
+            const Divider(height: 1, color: Color(0x1AFFFFFF)),
+            _SettingToggle(label: 'Rest Between Exercises', description: 'Insert a rest interval during sessions', value: store.restBetweenExercises, onChanged: (value) => store.updatePreferences(rest: value)),
+            const Divider(height: 1, color: Color(0x1AFFFFFF)),
+            _SettingToggle(label: 'Water Reminders', description: 'Nudge yourself to keep hydrated', value: store.waterReminders, onChanged: (value) => store.updatePreferences(water: value)),
+            const Divider(height: 1, color: Color(0x1AFFFFFF)),
+            _SettingToggle(label: 'Workout Reminders', description: 'Daily prompt to keep your streak alive', value: store.workoutReminders, onChanged: (value) => store.updatePreferences(workout: value)),
+          ]))),
+          const SizedBox(height: 12),
+          Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Your Data', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 8),
+            const Text('FitMalaysia stores everything locally on this device — no account needed and it works offline.', style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, height: 1.35)),
+            const SizedBox(height: 14),
+            SizedBox(width: double.infinity, child: FilledButton(onPressed: () => _confirmDataAction(context, deleteEverything: false), style: FilledButton.styleFrom(backgroundColor: const Color(0xFF303530), foregroundColor: const Color(0xFFF1F5F1), elevation: 0), child: const Text('RESET PROGRESS'))),
+            const SizedBox(height: 9),
+            SizedBox(width: double.infinity, child: FilledButton(onPressed: () => _confirmDataAction(context, deleteEverything: true), style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB9383A), foregroundColor: Colors.white), child: const Text('DELETE EVERYTHING'))),
+          ]))),
+        ])),
+      ]),
+      bottomNavigationBar: _GlassBottomNav(selectedIndex: 4, onSelected: (value) { _shellNavigation.value = value; Navigator.of(context).popUntil((route) => route.isFirst); }),
+    );
+  }
+
+  Future<void> _confirmDataAction(BuildContext context, {required bool deleteEverything}) async {
+    final confirmed = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
+      title: Text(deleteEverything ? 'Delete all FitMalaysia data?' : 'Reset all progress?'),
+      content: Text(deleteEverything ? 'This removes your profile, goals, history and achievements, then restarts onboarding.' : 'This clears your workout history, weight log, water log and XP. Your profile stays.'),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(dialogContext, true), style: deleteEverything ? FilledButton.styleFrom(backgroundColor: const Color(0xFFB9383A)) : null, child: const Text('Confirm'))],
+    ));
+    if (confirmed != true) return;
+    final store = context.read<FitLifeStore>();
+    if (deleteEverything) {
+      await store.resetEverything();
+      if (context.mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    } else {
+      store.resetProgress();
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Progress reset')));
+    }
+  }
+}
+
+class _AppearanceOption extends StatelessWidget {
+  const _AppearanceOption({required this.label, required this.active, required this.onTap});
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: SizedBox(
+          height: 42,
+          child: FilledButton(
+            onPressed: onTap,
+            style: FilledButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              backgroundColor: active ? const Color(0xFFBCF04B) : const Color(0xFF303530),
+              foregroundColor: active ? const Color(0xFF182318) : const Color(0xFFF1F5F1),
+              elevation: 0,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label, textScaler: TextScaler.noScaling, maxLines: 1, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ),
+      );
+}
+
+class _SettingToggle extends StatelessWidget {
+  const _SettingToggle({required this.label, required this.description, required this.value, required this.onChanged});
+  final String label, description;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(vertical: 13), child: Row(children: [Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontWeight: FontWeight.w700)), const SizedBox(height: 2), Text(description, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12))])), const SizedBox(width: 12), Switch(value: value, onChanged: onChanged)]));
+}
+
 class WorkoutDetailPage extends StatelessWidget {
   const WorkoutDetailPage({super.key, required this.workout});
   final Workout workout;
@@ -1244,7 +1361,7 @@ class WorkoutDetailPage extends StatelessWidget {
         scrolledUnderElevation: 0,
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(workout.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900)),
+          Text(workout.name.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900)),
           Text('${workout.category} · ${workout.difficulty}', style: Theme.of(context).textTheme.labelSmall),
         ]),
         actions: [Padding(padding: const EdgeInsets.only(right: 12), child: Container(width: 40, height: 40, decoration: const BoxDecoration(color: Color(0xFF303530), shape: BoxShape.circle), child: IconButton(onPressed: () => store.toggleFavorite(workout.id), icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border, color: isFavorite ? const Color(0xFFBCF04B) : null))))],
@@ -1421,7 +1538,7 @@ void logWeight(BuildContext context) {
 
 String _timeGreeting() {
   final hour = DateTime.now().hour;
-  if (hour < 12) return 'morning';
-  if (hour < 18) return 'afternoon';
-  return 'evening';
+  if (hour < 12) return 'Morning';
+  if (hour < 18) return 'Afternoon';
+  return 'Evening';
 }
