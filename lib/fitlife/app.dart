@@ -122,9 +122,7 @@ class _FitLifeShellState extends State<FitLifeShell> {
   Widget build(BuildContext context) => ValueListenableBuilder<int>(
         valueListenable: _shellNavigation,
         builder: (context, index, _) => Scaffold(
-          extendBody: true,
-          body: SafeArea(child: IndexedStack(index: index, children: pages)),
-          bottomNavigationBar: _GlassBottomNav(selectedIndex: index, onSelected: (value) => _shellNavigation.value = value),
+          body: IndexedStack(index: index, children: pages),
         ),
       );
 }
@@ -230,6 +228,10 @@ class AppPage extends StatelessWidget {
           ),
           Expanded(child: child),
         ]),
+        bottomNavigationBar: ValueListenableBuilder<int>(
+          valueListenable: _shellNavigation,
+          builder: (context, index, _) => _GlassBottomNav(selectedIndex: index, onSelected: (value) => _shellNavigation.value = value),
+        ),
       );
 }
 
@@ -247,7 +249,7 @@ class HomePage extends StatelessWidget {
     return AppPage(
       title: 'Good ${_timeGreeting()}, ${store.name}',
       subtitle: 'Level ${store.level} · ${store.xp} XP',
-      child: ListView(padding: const EdgeInsets.all(16), children: [
+      child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
         Card(child: Padding(padding: const EdgeInsets.all(20), child: Row(children: [
           _GoalRing(progress: goalProgress),
           const SizedBox(width: 20),
@@ -489,7 +491,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
       title: 'Workouts',
       subtitle: '${listed.length} of ${workouts.length} workouts',
       actions: [IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favorites are saved with the heart button.'))), icon: const Icon(Icons.favorite_outline)), IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Workout history is shown in Progress.'))), icon: const Icon(Icons.history))],
-      child: ListView(children: [
+      child: ListView(padding: const EdgeInsets.only(bottom: 108), children: [
         Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 8), child: Row(children: [Expanded(child: TextField(onChanged: (value) => setState(() => query = value), decoration: InputDecoration(prefixIcon: const Icon(Icons.search), suffixIcon: query.isEmpty ? null : IconButton(onPressed: () => setState(() => query = ''), icon: const Icon(Icons.close)), hintText: 'Search workouts, muscles, equipment...'))), const SizedBox(width: 8), SizedBox(height: 48, width: 48, child: FilledButton(onPressed: () => setState(() => showFilters = !showFilters), style: FilledButton.styleFrom(padding: EdgeInsets.zero, backgroundColor: showFilters ? const Color(0xFFBCF04B) : const Color(0xFF303530), foregroundColor: showFilters ? const Color(0xFF182318) : const Color(0xFFF1F5F1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Icon(Icons.tune)))])),
         SizedBox(
           height: 44,
@@ -635,7 +637,7 @@ class _ProgressPageState extends State<ProgressPage> {
     return AppPage(
       title: 'Progress',
       subtitle: 'Level ${store.level} · ${store.xp} XP',
-      child: ListView(padding: const EdgeInsets.all(16), children: [
+      child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
         Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Level', style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, fontWeight: FontWeight.w600)), const SizedBox(height: 2), Text('${store.xp} XP total', style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900))])), const Icon(Icons.emoji_events_outlined, color: Color(0xFFBCF04B), size: 27)]),
           const SizedBox(height: 14),
@@ -918,7 +920,7 @@ class NutritionPage extends StatelessWidget {
   Widget build(BuildContext context) => AppPage(
         title: 'Nutrition',
         subtitle: 'Fuel and hydration basics',
-        child: ListView(padding: const EdgeInsets.all(16), children: [
+        child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
           const _NutritionWaterCard(),
           const SizedBox(height: 22),
           Text('Nutrition guides', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
@@ -1080,7 +1082,7 @@ class ProfilePage extends StatelessWidget {
     final store = context.watch<FitLifeStore>();
     return AppPage(
       title: 'Profile',
-      child: ListView(padding: const EdgeInsets.all(16), children: [
+      child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 108), children: [
         Card(child: ListTile(leading: CircleAvatar(child: Text(store.name.isEmpty ? 'F' : store.name[0])), title: Text(store.name), subtitle: Text('${store.fitnessLevel} · ${store.goal}'))),
         Card(child: ListTile(title: const Text('Log weight'), subtitle: Text(store.weightKg == null ? 'No weight recorded' : '${store.weightKg} kg'), onTap: () => logWeight(context))),
         Card(child: SwitchListTile(title: const Text('Dark mode'), value: store.darkMode, onChanged: store.setDarkMode)),
