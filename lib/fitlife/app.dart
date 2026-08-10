@@ -612,26 +612,211 @@ class _LegacyWorkoutTile extends StatelessWidget {
   }
 }
 
-class ProgressPage extends StatelessWidget {
+class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
+
+  @override
+  State<ProgressPage> createState() => _ProgressPageState();
+}
+
+class _ProgressPageState extends State<ProgressPage> {
+  int tab = 0;
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
-    final bmiText = store.bmi == null ? 'Add height and weight in Profile' : store.bmi!.toStringAsFixed(1);
+    final levelProgress = (store.xp % 100) / 100;
+    final weekStart = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day).subtract(Duration(days: DateTime.now().weekday - 1));
+    final weekWorkouts = store.history.where((log) => !log.completedAt.isBefore(weekStart)).length;
     return AppPage(
       title: 'Progress',
+      subtitle: 'Level ${store.level} · ${store.xp} XP',
       child: ListView(padding: const EdgeInsets.all(16), children: [
-        Card(child: ListTile(title: const Text('BMI'), subtitle: Text(bmiText))),
-        Card(child: ListTile(title: const Text('Activity'), subtitle: Text('${store.history.length} workouts · ${store.totalMinutes} minutes · ${store.totalCalories} kcal'))),
-        const SizedBox(height: 10),
-        Text('Workout history', style: Theme.of(context).textTheme.titleLarge),
-        if (store.history.isEmpty)
-          const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('Complete a workout to begin your history.')))
-        else
-          ...store.history.map((log) => Card(child: ListTile(title: Text(log.name), subtitle: Text('${log.minutes} min · ${log.calories} kcal'), trailing: Text('+${log.xp} XP')))),
+        Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Level', style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12, fontWeight: FontWeight.w600)), const SizedBox(height: 2), Text('${store.xp} XP total', style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900))])), const Icon(Icons.emoji_events_outlined, color: Color(0xFFBCF04B), size: 27)]),
+          const SizedBox(height: 14),
+          LinearProgressIndicator(value: levelProgress, minHeight: 9, borderRadius: BorderRadius.circular(10), backgroundColor: const Color(0xFF303530), color: const Color(0xFFBCF04B)),
+          const SizedBox(height: 8),
+          Text('${100 - (store.xp % 100)} XP to level ${store.level + 1}', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)),
+        ]))),
+        const SizedBox(height: 12),
+        GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, childAspectRatio: 1.4, crossAxisSpacing: 10, mainAxisSpacing: 10, children: [
+          _ProgressStat(label: 'CURRENT STREAK', value: '${_currentStreak(store.history)} days', hint: 'Longest: ${_currentStreak(store.history)}', icon: Icons.local_fire_department_outlined, color: const Color(0xFFFFA66D)),
+          _ProgressStat(label: 'WORKOUTS', value: '${store.history.length}', hint: '$weekWorkouts this week', icon: Icons.directions_run_outlined, color: const Color(0xFFBCF04B)),
+          _ProgressStat(label: 'TOTAL TIME', value: '${store.totalMinutes}m', hint: 'All time', icon: Icons.timer_outlined, color: const Color(0xFFF1F5F1)),
+          _ProgressStat(label: 'CALORIES', value: '${store.totalCalories}', hint: 'Estimated, all time', icon: Icons.local_fire_department_outlined, color: const Color(0xFFFFA66D)),
+        ]),
+        const SizedBox(height: 18),
+        Container(height: 48, padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: const Color(0xFF303530), borderRadius: BorderRadius.circular(13)), child: Row(children: [
+          _ProgressTab(label: 'ACTIVITY', active: tab == 0, onTap: () => setState(() => tab = 0)),
+          _ProgressTab(label: 'BODY', active: tab == 1, onTap: () => setState(() => tab = 1)),
+          _ProgressTab(label: 'AWARDS', active: tab == 2, onTap: () => setState(() => tab = 2)),
+        ])),
+        const SizedBox(height: 16),
+        if (tab == 0) _ProgressActivity(weekWorkouts: weekWorkouts, history: store.history, totalMinutes: store.totalMinutes, totalCalories: store.totalCalories),
+        if (tab == 1) const _ProgressBody(),
+        if (tab == 2) _ProgressAwards(workoutsCompleted: store.history.length, xp: store.xp),
       ]),
     );
+  }
+}
+
+class _ProgressStat extends StatelessWidget {
+  const _ProgressStat({required this.label, required this.value, required this.hint, required this.icon, required this.color});
+  final String label, value, hint;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Row(children: [Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .7))), Icon(icon, color: color, size: 18)]),
+    const Spacer(), Text(value, style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900, color: color)), const SizedBox(height: 2), Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 11)),
+  ])));
+}
+
+class _ProgressTab extends StatelessWidget {
+  const _ProgressTab({required this.label, required this.active, required this.onTap});
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Expanded(child: Material(color: Colors.transparent, child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(10), child: Container(alignment: Alignment.center, decoration: BoxDecoration(color: active ? const Color(0xFFBCF04B) : Colors.transparent, borderRadius: BorderRadius.circular(10)), child: Text(label, textScaler: TextScaler.noScaling, style: TextStyle(color: active ? const Color(0xFF182318) : const Color(0xFFAFBBB3), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .8))))));
+}
+
+class _ProgressActivity extends StatelessWidget {
+  const _ProgressActivity({required this.weekWorkouts, required this.history, required this.totalMinutes, required this.totalCalories});
+  final int weekWorkouts, totalMinutes, totalCalories;
+  final List<WorkoutLog> history;
+
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('This week', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 2), Text('$weekWorkouts of 3 target workouts', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)), const SizedBox(height: 12), _WeekActivity(history: history),
+    ]))),
+    const SizedBox(height: 12),
+    Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('This month', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 14), Row(children: [
+        _MonthMetric(label: 'WORKOUTS', value: '$weekWorkouts'), _MonthMetric(label: 'MINUTES', value: '$totalMinutes'), _MonthMetric(label: 'CALORIES', value: '$totalCalories'),
+      ]),
+    ]))),
+  ]);
+}
+
+class _MonthMetric extends StatelessWidget {
+  const _MonthMetric({required this.label, required this.value});
+  final String label, value;
+  @override
+  Widget build(BuildContext context) => Expanded(child: Column(children: [Text(label, textScaler: TextScaler.noScaling, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 10, fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text(value, style: GoogleFonts.archivo(fontSize: 20, fontWeight: FontWeight.w900))]));
+}
+
+class _ProgressBody extends StatefulWidget {
+  const _ProgressBody();
+  @override
+  State<_ProgressBody> createState() => _ProgressBodyState();
+}
+
+class _ProgressBodyState extends State<_ProgressBody> {
+  late final TextEditingController height;
+  late final TextEditingController weight;
+
+  @override
+  void initState() {
+    super.initState();
+    final store = context.read<FitLifeStore>();
+    height = TextEditingController(text: store.heightCm?.toStringAsFixed(0) ?? '');
+    weight = TextEditingController(text: store.weightKg?.toStringAsFixed(1) ?? '');
+    height.addListener(_refreshBmi);
+    weight.addListener(_refreshBmi);
+  }
+
+  void _refreshBmi() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    height.dispose();
+    weight.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<FitLifeStore>();
+    final parsedHeight = double.tryParse(height.text.replaceAll(',', '.'));
+    final parsedWeight = double.tryParse(weight.text.replaceAll(',', '.'));
+    final rawBmi = parsedHeight != null && parsedWeight != null && parsedHeight >= 80 && parsedHeight <= 250 && parsedWeight >= 20 && parsedWeight <= 400 ? parsedWeight / ((parsedHeight / 100) * (parsedHeight / 100)) : null;
+    final bmi = rawBmi == null ? null : (rawBmi * 10).round() / 10;
+    final category = bmi == null ? '' : bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Overweight' : 'Obese';
+    final tone = category == 'Normal' ? const Color(0xFFBCF04B) : category == 'Underweight' ? const Color(0xFF77BEFF) : const Color(0xFFFFA66D);
+    final explanation = switch (category) {
+      'Underweight' => 'Your BMI is below the typical range. Focus on strength training and eating enough to support your body. Consider speaking to a health professional.',
+      'Normal' => 'Your BMI sits in the typical range. Keep training consistently and eating a balanced diet to maintain it.',
+      'Overweight' => 'Your BMI is above the typical range. Regular activity and small sustainable eating changes make the biggest difference over time.',
+      'Obese' => 'Your BMI is well above the typical range. Gentle, consistent activity is a great starting point, and a health professional can help you build a safe plan.',
+      _ => '',
+    };
+    return Column(children: [
+      Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('BMI calculator', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)), const SizedBox(height: 14),
+        Row(children: [
+          Expanded(child: TextField(controller: height, onChanged: (_) => setState(() {}), keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Height (cm)', hintText: '175'))),
+          const SizedBox(width: 12),
+          Expanded(child: TextField(controller: weight, onChanged: (_) => setState(() {}), keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Weight (kg)', hintText: '70'))),
+        ]),
+        const SizedBox(height: 14),
+        if (bmi == null) const Text('Enter your height and weight to see your BMI.', style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)) else Container(width: double.infinity, padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFF303530), borderRadius: BorderRadius.circular(12)), child: Column(children: [Text(bmi.toStringAsFixed(1), style: GoogleFonts.archivo(fontSize: 30, fontWeight: FontWeight.w900, color: tone)), Text(category, style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text(explanation, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 11, height: 1.32))])),
+        const SizedBox(height: 12),
+        SizedBox(width: double.infinity, child: OutlinedButton(onPressed: () { final h = double.tryParse(height.text.replaceAll(',', '.')); final w = double.tryParse(weight.text.replaceAll(',', '.')); if (h != null && w != null && h >= 80 && h <= 250 && w >= 20 && w <= 400) { context.read<FitLifeStore>().updateProfile(height: h, weight: w); } else { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid height and weight.'))); } }, child: const Text('SAVE TO PROFILE'))),
+      ]))),
+      const SizedBox(height: 12),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Weight log', style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900)),
+                Text(store.weights.isEmpty ? 'No entries yet' : 'Latest: ${store.weights.first.toStringAsFixed(1)} kg', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 12)),
+              ])),
+              FilledButton.icon(onPressed: () => logWeight(context), icon: const Icon(Icons.add, size: 16), label: const Text('LOG')),
+            ]),
+            const SizedBox(height: 12),
+            if (store.weights.isEmpty)
+              const Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Text('Log your weight to see your trend over time.', style: TextStyle(color: Color(0xFFAFBBB3), fontSize: 12))))
+            else
+              ...store.weights.take(6).toList().asMap().entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 9),
+                  child: Row(children: [
+                    SizedBox(width: 54, child: Text('Entry ${entry.key + 1}', style: const TextStyle(color: Color(0xFFAFBBB3), fontSize: 11))),
+                    Expanded(child: Container(height: 8, decoration: BoxDecoration(color: const Color(0xFFBCF04B), borderRadius: BorderRadius.circular(10)))),
+                    const SizedBox(width: 12),
+                    Text('${entry.value.toStringAsFixed(1)} kg', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                  ]),
+                ),
+              ),
+          ]),
+        ),
+      ),
+    ]);
+  }
+}
+
+class _ProgressAwards extends StatelessWidget {
+  const _ProgressAwards({required this.workoutsCompleted, required this.xp});
+  final int workoutsCompleted, xp;
+
+  @override
+  Widget build(BuildContext context) {
+    final awards = [
+      ('🌱', 'First step', 'Complete your first workout', workoutsCompleted >= 1),
+      ('🔥', 'On a roll', 'Complete 3 workouts', workoutsCompleted >= 3),
+      ('⚡', 'XP builder', 'Earn 100 XP', xp >= 100),
+      ('🏆', 'Week warrior', 'Complete 7 workouts', workoutsCompleted >= 7),
+    ];
+    return Column(children: awards.map((award) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Opacity(opacity: award.$4 ? 1 : .58, child: Card(child: ListTile(leading: Text(award.$4 ? award.$1 : '🔒', style: const TextStyle(fontSize: 24)), title: Text(award.$2, style: const TextStyle(fontWeight: FontWeight.w800)), subtitle: Text(award.$3), trailing: award.$4 ? const _Badge(text: 'Unlocked', green: true) : null))))).toList());
   }
 }
 
@@ -983,6 +1168,18 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
 }
 
 Widget _choice(List<String> values, String selected, ValueChanged<String> onSelected) => Wrap(spacing: 8, runSpacing: 8, children: values.map((value) => ChoiceChip(label: Text(value), selected: value == selected, onSelected: (_) => onSelected(value))).toList());
+int _currentStreak(List<WorkoutLog> history) {
+  final days = history.map((entry) => DateTime(entry.completedAt.year, entry.completedAt.month, entry.completedAt.day)).toSet();
+  var day = DateTime.now();
+  day = DateTime(day.year, day.month, day.day);
+  if (!days.contains(day)) day = day.subtract(const Duration(days: 1));
+  var streak = 0;
+  while (days.contains(day)) {
+    streak++;
+    day = day.subtract(const Duration(days: 1));
+  }
+  return streak;
+}
 void openWorkout(BuildContext context, Workout workout) => Navigator.push(context, MaterialPageRoute(builder: (_) => WorkoutDetailPage(workout: workout)));
 void logWeight(BuildContext context) {
   final input = TextEditingController();
