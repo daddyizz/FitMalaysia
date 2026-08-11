@@ -7,8 +7,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'privacy_consent.dart';
 
 /// A single, low-interruption banner shown only at the end of the Home feed.
-/// Debug builds use Google's test unit; release Android builds use FitMalaysia's
-/// existing AdMob banner unit.
+/// All development and profile builds use Google's test unit. Only release
+/// Android builds use FitMalaysia's production banner unit.
 class HomeAdBanner extends StatefulWidget {
   const HomeAdBanner({super.key});
 
@@ -18,7 +18,8 @@ class HomeAdBanner extends StatefulWidget {
 
 class _HomeAdBannerState extends State<HomeAdBanner> {
   static const _androidTestUnitId = 'ca-app-pub-3940256099942544/9214589741';
-  static const _androidProductionUnitId = 'ca-app-pub-4110950503958596/2401217451';
+  static const _androidProductionUnitId =
+      'ca-app-pub-4110950503958596/2401217451';
 
   BannerAd? _bannerAd;
   bool _isLoading = false;
@@ -31,20 +32,27 @@ class _HomeAdBannerState extends State<HomeAdBanner> {
   }
 
   Future<void> _requestAdIfAllowed() async {
-    if (kIsWeb || !Platform.isAndroid || _isLoading || _bannerAd != null || !PrivacyConsent.instance.canRequestAds) return;
+    if (kIsWeb ||
+        !Platform.isAndroid ||
+        _isLoading ||
+        _bannerAd != null ||
+        !PrivacyConsent.instance.canRequestAds)
+      return;
     _isLoading = true;
     await MobileAds.instance.initialize();
     if (!mounted) return;
 
     final width = (MediaQuery.sizeOf(context).width - 32).truncate();
-    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+      width,
+    );
     if (!mounted || size == null) {
       _isLoading = false;
       return;
     }
 
     final ad = BannerAd(
-      adUnitId: kDebugMode ? _androidTestUnitId : _androidProductionUnitId,
+      adUnitId: kReleaseMode ? _androidProductionUnitId : _androidTestUnitId,
       request: const AdRequest(),
       size: size,
       listener: BannerAdListener(
