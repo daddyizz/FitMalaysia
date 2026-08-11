@@ -670,7 +670,7 @@ class HomePage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Move Today',
+                              'MOVE TODAY',
                               style: GoogleFonts.archivo(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
@@ -2038,8 +2038,9 @@ class _ProgressActivity extends StatelessWidget {
               Text(
                 'This Week',
                 style: GoogleFonts.archivo(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -.25,
                 ),
               ),
               const SizedBox(height: 2),
@@ -2063,8 +2064,9 @@ class _ProgressActivity extends StatelessWidget {
               Text(
                 'This Month',
                 style: GoogleFonts.archivo(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -.25,
                 ),
               ),
               const SizedBox(height: 14),
@@ -2195,8 +2197,9 @@ class _ProgressBodyState extends State<_ProgressBody> {
                 Text(
                   'BMI Calculator',
                   style: GoogleFonts.archivo(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -.25,
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -2333,8 +2336,9 @@ class _ProgressBodyState extends State<_ProgressBody> {
                           Text(
                             'Weight Log',
                             style: GoogleFonts.archivo(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -.25,
                             ),
                           ),
                           Text(
@@ -2738,7 +2742,11 @@ class NutritionPage extends StatelessWidget {
         const SizedBox(height: 22),
         Text(
           'Nutrition Guides',
-          style: GoogleFonts.archivo(fontSize: 17, fontWeight: FontWeight.w900),
+          style: GoogleFonts.archivo(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -.25,
+          ),
         ),
         const SizedBox(height: 10),
         ...nutritionArticles.map(
@@ -2780,8 +2788,9 @@ class _NutritionWaterCard extends StatelessWidget {
                       Text(
                         'Water Intake',
                         style: GoogleFonts.archivo(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -.25,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -3091,8 +3100,9 @@ class _NutritionSection extends StatelessWidget {
           Text(
             title,
             style: GoogleFonts.archivo(
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -.25,
             ),
           ),
           const SizedBox(height: 10),
@@ -3268,8 +3278,9 @@ class ProfilePage extends StatelessWidget {
                   Text(
                     'Your Details',
                     style: GoogleFonts.archivo(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.25,
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -3385,8 +3396,9 @@ class ProfilePage extends StatelessWidget {
                   Text(
                     'Targets',
                     style: GoogleFonts.archivo(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.25,
                     ),
                   ),
                   const SizedBox(height: 16),
