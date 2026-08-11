@@ -1,4 +1,4 @@
-package com.mfysa.fitmalaysia
+package com.daddyizz.fitmalaysia
 
 import io.flutter.embedding.android.FlutterActivity
 
