@@ -36,16 +36,15 @@ class _HomeAdBannerState extends State<HomeAdBanner> {
         !Platform.isAndroid ||
         _isLoading ||
         _bannerAd != null ||
-        !PrivacyConsent.instance.canRequestAds)
+        !PrivacyConsent.instance.canRequestAds) {
       return;
+    }
     _isLoading = true;
     await MobileAds.instance.initialize();
     if (!mounted) return;
 
     final width = (MediaQuery.sizeOf(context).width - 32).truncate();
-    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-      width,
-    );
+    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width);
     if (!mounted || size == null) {
       _isLoading = false;
       return;
@@ -95,7 +94,9 @@ class _HomeAdBannerState extends State<HomeAdBanner> {
           Text(
             'ADVERTISEMENT',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(.45),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: .45),
               fontSize: 9,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.1,

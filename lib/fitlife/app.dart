@@ -52,7 +52,7 @@ class FitLifeApp extends StatelessWidget {
     final store = context.watch<FitLifeStore>();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'FitLife',
+      title: 'FitMalaysia',
       themeMode: store.themePreference == 'system'
           ? ThemeMode.system
           : store.themePreference == 'light'
@@ -60,9 +60,8 @@ class FitLifeApp extends StatelessWidget {
           : ThemeMode.dark,
       theme: _lightTheme(),
       darkTheme: _nightTheme(),
-      builder: (context, child) => Stack(
-        children: [if (child != null) child, const _AchievementToast()],
-      ),
+      builder: (context, child) =>
+          Stack(children: [?child, const _AchievementToast()]),
       home: store.onboarded ? const FitLifeShell() : const OnboardingScreen(),
     );
   }
@@ -72,87 +71,85 @@ class _AchievementToast extends StatelessWidget {
   const _AchievementToast();
 
   @override
-  Widget build(BuildContext context) =>
-      ValueListenableBuilder<AchievementNotice?>(
-        valueListenable: _achievementToast,
-        builder: (context, achievement, _) {
-          if (achievement == null) return const SizedBox.shrink();
-          final scheme = Theme.of(context).colorScheme;
-          return Positioned(
-            top: MediaQuery.paddingOf(context).top + 12,
-            left: 16,
-            right: 16,
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: _elevated(context),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: scheme.primary.withOpacity(.35)),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 18,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
+  Widget build(
+    BuildContext context,
+  ) => ValueListenableBuilder<AchievementNotice?>(
+    valueListenable: _achievementToast,
+    builder: (context, achievement, _) {
+      if (achievement == null) return const SizedBox.shrink();
+      final scheme = Theme.of(context).colorScheme;
+      return Positioned(
+        top: MediaQuery.paddingOf(context).top + 12,
+        left: 16,
+        right: 16,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: _elevated(context),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: scheme.primary.withValues(alpha: .35)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 6),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withOpacity(.18),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        achievement.icon,
-                        style: const TextStyle(fontSize: 23),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'ACHIEVEMENT UNLOCKED',
-                            style: TextStyle(
-                              color: scheme.primary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.05,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            achievement.title,
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                          Text(
-                            achievement.description,
-                            style: TextStyle(
-                              color: _muted(context),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _dismissAchievementToast,
-                      child: const Text('NICE'),
-                    ),
-                  ],
-                ),
-              ),
+              ],
             ),
-          );
-        },
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: scheme.primary.withValues(alpha: .18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    achievement.icon,
+                    style: const TextStyle(fontSize: 23),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ACHIEVEMENT UNLOCKED',
+                        style: TextStyle(
+                          color: scheme.primary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.05,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        achievement.title,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        achievement.description,
+                        style: TextStyle(color: _muted(context), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: _dismissAchievementToast,
+                  child: const Text('NICE'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
+    },
+  );
 }
 
 void _showAchievementToast(AchievementNotice achievement) {
@@ -306,24 +303,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final title = [
-      'Welcome to FitLife',
+      'Welcome to FitMalaysia',
       'Your name',
       'Fitness level',
       'Your goal',
     ][page];
     Widget body = const Text('Your offline fitness companion.');
-    if (page == 1)
+    if (page == 1) {
       body = TextField(
         controller: name,
         decoration: const InputDecoration(labelText: 'Name'),
       );
-    if (page == 2)
+    }
+    if (page == 2) {
       body = _choice(
         ['Beginner', 'Intermediate', 'Advanced'],
         level,
         (value) => setState(() => level = value),
       );
-    if (page == 3)
+    }
+    if (page == 3) {
       body = _choice(
         [
           'Lose Weight',
@@ -336,6 +335,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         goal,
         (value) => setState(() => goal = value),
       );
+    }
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -608,7 +608,7 @@ class AppPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (actions != null) ...actions!,
+                    ...?actions,
                   ],
                 ),
               ),
@@ -1328,16 +1328,19 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     ];
     final listed = workouts.where((item) {
       if (!item.name.toLowerCase().contains(query.toLowerCase()) &&
-          !item.category.toLowerCase().contains(query.toLowerCase()))
+          !item.category.toLowerCase().contains(query.toLowerCase())) {
         return false;
+      }
       if (category != 'All' && item.category != category) return false;
       if (difficulty != 'All' && item.difficulty != difficulty) return false;
       if (equipment != 'All' &&
-          !equipmentForWorkout(item.id).contains(equipment))
+          !equipmentForWorkout(item.id).contains(equipment)) {
         return false;
+      }
       if (duration == 'short' && item.minutes > 10) return false;
-      if (duration == 'medium' && (item.minutes <= 10 || item.minutes > 20))
+      if (duration == 'medium' && (item.minutes <= 10 || item.minutes > 20)) {
         return false;
+      }
       if (duration == 'long' && item.minutes <= 20) return false;
       return true;
     }).toList();
@@ -1418,7 +1421,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
                 itemCount: categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, item) => _FilterPill(
                   label: categories[item],
                   active: category == categories[item],
@@ -1707,6 +1710,7 @@ class _WorkoutPhotoCard extends StatelessWidget {
 }
 
 /* Legacy compact card retained below while the new photo card replaces it. */
+// ignore: unused_element
 class _LegacyWorkoutTile extends StatelessWidget {
   const _LegacyWorkoutTile(this.workout);
   final Workout workout;
@@ -2497,7 +2501,7 @@ class WorkoutArtwork extends StatelessWidget {
         width: width,
         height: height,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => fallback,
+        errorBuilder: (_, _, _) => fallback,
       ),
     );
   }
@@ -2836,7 +2840,7 @@ class _NutritionWaterCard extends StatelessWidget {
                   size: 18,
                   color: index < store.waterToday
                       ? const Color(0xFF77BEFF)
-                      : const Color(0xFF77BEFF).withOpacity(.23),
+                      : const Color(0xFF77BEFF).withValues(alpha: .23),
                 ),
               ),
             ),
@@ -3290,10 +3294,11 @@ class ProfilePage extends StatelessWidget {
                             final parsed = double.tryParse(
                               value.replaceAll(',', '.'),
                             );
-                            if (parsed != null)
+                            if (parsed != null) {
                               context.read<FitLifeStore>().updateProfile(
                                 height: parsed,
                               );
+                            }
                           },
                           decoration: const InputDecoration(
                             labelText: 'Height (cm)',
@@ -3635,7 +3640,7 @@ class WorkoutHistoryPage extends StatelessWidget {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
                     itemCount: history.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final entry = history[index];
                       final date =
@@ -3918,8 +3923,9 @@ class SettingsPage extends StatelessWidget {
                 AnimatedBuilder(
                   animation: PrivacyConsent.instance,
                   builder: (context, _) {
-                    if (!PrivacyConsent.instance.privacyOptionsRequired)
+                    if (!PrivacyConsent.instance.privacyOptionsRequired) {
                       return const SizedBox.shrink();
+                    }
                     return Column(
                       children: [
                         const SizedBox(height: 12),
@@ -4147,18 +4153,17 @@ class SettingsPage extends StatelessWidget {
         );
       },
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !context.mounted) return;
     final store = context.read<FitLifeStore>();
     if (deleteEverything) {
       await store.resetEverything();
-      if (context.mounted)
-        Navigator.of(context).popUntil((route) => route.isFirst);
+      if (!context.mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } else {
       store.resetProgress();
-      if (context.mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Progress reset')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Progress reset')));
     }
   }
 }
@@ -4265,12 +4270,13 @@ class PrivacyPolicyPage extends StatelessWidget {
                       await Clipboard.setData(
                         const ClipboardData(text: _privacyPolicyUrl),
                       );
-                      if (context.mounted)
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Privacy Policy link copied.'),
                           ),
                         );
+                      }
                     },
                     icon: const Icon(Icons.link),
                     label: const Text('COPY PUBLIC POLICY LINK'),
@@ -5094,7 +5100,7 @@ class WorkoutCompletePage extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: scheme.primary.withOpacity(.25),
+                        color: scheme.primary.withValues(alpha: .25),
                         blurRadius: 24,
                         offset: const Offset(0, 10),
                       ),
@@ -5175,11 +5181,12 @@ class WorkoutCompletePage extends StatelessWidget {
   void _leaveCompletePage(BuildContext context, int destination) {
     _shellNavigation.value = destination;
     Navigator.of(context).popUntil((route) => route.isFirst);
-    if (achievement != null)
+    if (achievement != null) {
       Future<void>.delayed(
         const Duration(milliseconds: 240),
         () => _showAchievementToast(achievement!),
       );
+    }
   }
 }
 
