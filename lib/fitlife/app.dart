@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'app_store.dart';
 import 'ad_banner.dart';
@@ -1050,6 +1051,8 @@ class HomePage extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              _SpotifyPlaylistCard(workout: workout),
               const SizedBox(height: 24),
               Text(
                 'UP NEXT FOR YOU',
@@ -5914,6 +5917,8 @@ class WorkoutDetailPage extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              _SpotifyPlaylistCard(workout: workout),
               const SizedBox(height: 24),
               Text(
                 'EXERCISES · ${workout.exercises.length * 45 ~/ 60} MIN OF WORK',
@@ -6049,6 +6054,150 @@ class WorkoutDetailPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _SpotifyPlaylistCard extends StatelessWidget {
+  const _SpotifyPlaylistCard({required this.workout});
+
+  final Workout workout;
+
+  @override
+  Widget build(BuildContext context) {
+    final playlist = _spotifyPlaylistFor(workout);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _isDark(context)
+            ? const Color(0xFF17261C)
+            : const Color(0xFFE8F5EA),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: _isDark(context)
+              ? const Color(0xFF2B4931)
+              : const Color(0xFFC6E3CC),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: const BoxDecoration(
+              color: Color(0xFF1DB954),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.graphic_eq_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'TRAINING SOUNDTRACK',
+                  style: TextStyle(
+                    color: _sectionLabel(context),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.05,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  playlist.title,
+                  style: GoogleFonts.archivo(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  playlist.subtitle,
+                  style: TextStyle(color: _muted(context), fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            height: 36,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 11),
+                backgroundColor: const Color(0xFF1DB954),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => _openSpotifyPlaylist(context, playlist.query),
+              child: const Text(
+                'OPEN PLAYLIST',
+                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+({String title, String subtitle, String query}) _spotifyPlaylistFor(
+  Workout workout,
+) {
+  final category = workout.category.toLowerCase();
+  if (category.contains('stretch') || category.contains('yoga')) {
+    return (
+      title: 'Slow Flow & Reset',
+      subtitle: 'Calm beats for mobility and recovery',
+      query: 'calm stretching yoga playlist',
+    );
+  }
+  if (category.contains('cardio') || category.contains('hiit')) {
+    return (
+      title: 'Cardio: Beast Mode',
+      subtitle: 'High-energy tracks to keep you moving',
+      query: 'cardio beast mode workout playlist',
+    );
+  }
+  if (category.contains('dance')) {
+    return (
+      title: 'Feel-Good Movement',
+      subtitle: 'Bright, upbeat music for a happy sweat',
+      query: 'feel good dance workout playlist',
+    );
+  }
+  if (category.contains('strength') ||
+      category.contains('chest') ||
+      category.contains('back') ||
+      category.contains('arms') ||
+      category.contains('legs')) {
+    return (
+      title: 'Strength & Focus',
+      subtitle: 'Steady beats for strong, controlled reps',
+      query: 'strength training focus workout playlist',
+    );
+  }
+  if (workout.difficulty == 'Beginner') {
+    return (
+      title: 'Start Strong',
+      subtitle: 'Easy momentum for your first sessions',
+      query: 'beginner workout motivation playlist',
+    );
+  }
+  return (
+    title: 'Power Through',
+    subtitle: 'A focused mix made for your training session',
+    query: 'power workout motivation playlist',
+  );
+}
+
+Future<void> _openSpotifyPlaylist(BuildContext context, String query) async {
+  final uri = Uri.https('open.spotify.com', '/search/$query/playlists');
+  if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Spotify could not be opened on this device.')),
+  );
 }
 
 class _DetailStat extends StatelessWidget {
