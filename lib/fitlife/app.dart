@@ -6192,11 +6192,32 @@ class _SpotifyPlaylistCard extends StatelessWidget {
 }
 
 Future<void> _openSpotifyPlaylist(BuildContext context, String query) async {
-  final uri = Uri.https('open.spotify.com', '/search/$query/playlists');
-  if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+  final spotifyApp = Uri.parse('spotify:search:${Uri.encodeComponent(query)}');
+  final spotifyWeb = Uri.https('open.spotify.com', '/search/$query/playlists');
+  try {
+    if (await launchUrl(spotifyApp, mode: LaunchMode.externalApplication)) {
+      return;
+    }
+  } on PlatformException {
+    // Spotify is optional. Continue with the web player when it is absent.
+  } catch (_) {
+    // Some Android launchers report an activity error rather than false.
+  }
+  try {
+    if (await launchUrl(spotifyWeb, mode: LaunchMode.externalApplication) ||
+        await launchUrl(spotifyWeb, mode: LaunchMode.platformDefault)) {
+      return;
+    }
+  } on PlatformException {
+    // Fall through to a useful, in-app message.
+  } catch (_) {
+    // Fall through to a useful, in-app message.
+  }
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Spotify could not be opened on this device.')),
+    const SnackBar(
+      content: Text('Install Spotify or a web browser to open this playlist.'),
+    ),
   );
 }
 
