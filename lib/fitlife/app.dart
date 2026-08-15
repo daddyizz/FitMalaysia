@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import 'app_store.dart';
 import 'ad_banner.dart';
@@ -66,9 +67,193 @@ class FitLifeApp extends StatelessWidget {
       darkTheme: _nightTheme(),
       builder: (context, child) =>
           Stack(children: [?child, const _AchievementToast()]),
-      home: store.onboarded ? const FitLifeShell() : const OnboardingScreen(),
+      home: _LaunchGate(
+        child: store.onboarded ? const FitLifeShell() : const OnboardingScreen(),
+      ),
     );
   }
+}
+
+class _LaunchGate extends StatefulWidget {
+  const _LaunchGate({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_LaunchGate> createState() => _LaunchGateState();
+}
+
+class _LaunchGateState extends State<_LaunchGate> {
+  Timer? _timer;
+  bool _showApp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(const Duration(milliseconds: 2300), () {
+      if (mounted) setState(() => _showApp = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+    duration: const Duration(milliseconds: 320),
+    child: _showApp ? widget.child : const _FitMalaysiaIntro(),
+  );
+}
+
+class _FitMalaysiaIntro extends StatelessWidget {
+  const _FitMalaysiaIntro();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFF050B06),
+    body: Stack(
+      fit: StackFit.expand,
+      children: [
+        const CustomPaint(painter: _LaunchGridPainter()),
+        Align(
+          alignment: const Alignment(0, -.48),
+          child: Container(
+            width: 360,
+            height: 360,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [Color(0x441E8E36), Color(0x00101D12)],
+              ),
+            ),
+          ),
+        ),
+        SafeArea(
+          child: Column(
+            children: [
+              const Spacer(flex: 3),
+              Container(
+                width: 94,
+                height: 94,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF09110B),
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(color: const Color(0xFF39633B)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x8A70B520),
+                      blurRadius: 34,
+                      spreadRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Image.asset('assets/branding/fitmalaysia-app-icon.png'),
+              ),
+              const SizedBox(height: 36),
+              RichText(
+                text: TextSpan(
+                  style: GoogleFonts.archivo(
+                    fontSize: 37,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.5,
+                  ),
+                  children: const [
+                    TextSpan(text: 'FIT', style: TextStyle(color: Color(0xFFA7E33D))),
+                    TextSpan(text: 'MALAYSIA', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: 236,
+                height: 24,
+                child: CustomPaint(painter: _PulseLinePainter()),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'MOVE MORE · LIVE BETTER',
+                style: TextStyle(
+                  color: Color(0xFFB4C2B5),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 3.1,
+                ),
+              ),
+              const Spacer(flex: 2),
+              const SizedBox(
+                width: 168,
+                child: LinearProgressIndicator(
+                  minHeight: 2,
+                  value: .82,
+                  color: Color(0xFFA7E33D),
+                  backgroundColor: Color(0xFF243226),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'YOUR FITNESS, YOUR PACE',
+                style: TextStyle(
+                  color: Color(0xFF819083),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2.4,
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _LaunchGridPainter extends CustomPainter {
+  const _LaunchGridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0x0CFFFFFF)
+      ..strokeWidth = 1;
+    for (var x = 0.0; x < size.width; x += 30) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = 0.0; y < size.height; y += 30) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LaunchGridPainter oldDelegate) => false;
+}
+
+class _PulseLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFA7E33D)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    final middle = size.height / 2;
+    final path = Path()
+      ..moveTo(0, middle)
+      ..lineTo(size.width * .33, middle)
+      ..lineTo(size.width * .40, middle - 8)
+      ..lineTo(size.width * .45, middle + 7)
+      ..lineTo(size.width * .50, middle - 12)
+      ..lineTo(size.width * .56, middle + 8)
+      ..lineTo(size.width * .62, middle)
+      ..lineTo(size.width, middle);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PulseLinePainter oldDelegate) => false;
 }
 
 class _AchievementToast extends StatelessWidget {
@@ -1051,6 +1236,8 @@ class HomePage extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              _YoutubeDemoCard(workout: workout),
               const SizedBox(height: 16),
               _SpotifyPlaylistCard(workout: workout),
               const SizedBox(height: 24),
@@ -6054,6 +6241,191 @@ class WorkoutDetailPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _YoutubeDemo {
+  const _YoutubeDemo({
+    required this.videoId,
+    required this.channel,
+    required this.title,
+  });
+
+  final String videoId;
+  final String channel;
+  final String title;
+}
+
+_YoutubeDemo _youtubeDemoFor(Workout workout) => switch (workout.category) {
+  'Beginner' => const _YoutubeDemo(
+    videoId: 'nUKKnkw7oAM',
+    channel: 'growingannanas',
+    title: 'Daily strength · no equipment',
+  ),
+  'Full Body' => const _YoutubeDemo(
+    videoId: 'G1RVPkcGuao',
+    channel: 'growingannanas',
+    title: 'Full body bodyweight workout',
+  ),
+  'Cardio' => const _YoutubeDemo(
+    videoId: '0GdRAislzQg',
+    channel: 'growingannanas',
+    title: 'Standing cardio HIIT',
+  ),
+  'Lower Body' || 'Legs' => const _YoutubeDemo(
+    videoId: 'k6kZTMsBzTk',
+    channel: 'growingannanas',
+    title: 'Low-impact lower body workout',
+  ),
+  'Abs/Core' => const _YoutubeDemo(
+    videoId: '7nIOqf23Ec0',
+    channel: 'growingannanas',
+    title: 'Strong abs and core workout',
+  ),
+  'Home Workout' || 'No Equipment' => const _YoutubeDemo(
+    videoId: 'oFP5buFFvBo',
+    channel: 'growingannanas',
+    title: 'No-equipment strength workout',
+  ),
+  'Upper Body' || 'Chest' => const _YoutubeDemo(
+    videoId: 'WdXdF2zVjVI',
+    channel: 'FitnessBlender',
+    title: 'Upper body strength without weights',
+  ),
+  'Back' => const _YoutubeDemo(
+    videoId: 'V76ouvP7k6Q',
+    channel: 'FitnessBlender',
+    title: 'Mobility for spine and back',
+  ),
+  'Arms' => const _YoutubeDemo(
+    videoId: 'XMk3TtM6d2Y',
+    channel: 'FitnessBlender',
+    title: 'Arms and core strength finisher',
+  ),
+  'Stretching' => const _YoutubeDemo(
+    videoId: 'P8DOZRtIIEQ',
+    channel: 'FitnessBlender',
+    title: 'Relaxing cool-down stretch',
+  ),
+  _ => const _YoutubeDemo(
+    videoId: 'G1RVPkcGuao',
+    channel: 'growingannanas',
+    title: 'Full body bodyweight workout',
+  ),
+};
+
+class _YoutubeDemoCard extends StatefulWidget {
+  const _YoutubeDemoCard({required this.workout});
+
+  final Workout workout;
+
+  @override
+  State<_YoutubeDemoCard> createState() => _YoutubeDemoCardState();
+}
+
+class _YoutubeDemoCardState extends State<_YoutubeDemoCard> {
+  late final _YoutubeDemo _demo;
+  late final YoutubePlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _demo = _youtubeDemoFor(widget.workout);
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: _demo.videoId,
+      autoPlay: false,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
+        privacyEnhancedMode: true,
+        strictRelatedVideos: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    clipBehavior: Clip.antiAlias,
+    decoration: BoxDecoration(
+      color: _elevated(context),
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: _pageBorder(context)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 13, 10, 10),
+          child: Row(
+            children: [
+              const Icon(Icons.play_circle_fill_rounded, color: Color(0xFFFF0000)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'VIDEO DEMO',
+                      style: TextStyle(
+                        color: _sectionLabel(context),
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    Text(
+                      _demo.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.archivo(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'Open on YouTube',
+                onPressed: () => _openYoutubeSource(context, _demo.videoId),
+                icon: const Icon(Icons.open_in_new_rounded, size: 19),
+              ),
+            ],
+          ),
+        ),
+        AspectRatio(
+          aspectRatio: 16 / 9,
+          child: YoutubePlayer(controller: _controller),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 9, 14, 12),
+          child: Text(
+            'Source: ${_demo.channel} on YouTube',
+            style: TextStyle(color: _muted(context), fontSize: 11),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _openYoutubeSource(BuildContext context, String videoId) async {
+  final uri = Uri.https('www.youtube.com', '/watch', {'v': videoId});
+  try {
+    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+  } catch (_) {
+    // The embedded player remains available if YouTube cannot open externally.
+  }
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('YouTube could not be opened on this device.')),
+  );
 }
 
 class _SpotifyPlaylistCard extends StatelessWidget {
