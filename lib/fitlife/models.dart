@@ -36,20 +36,41 @@ class WorkoutLog {
   final int xp;
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'completedAt': completedAt.toIso8601String(),
-        'minutes': minutes,
-        'calories': calories,
-        'xp': xp,
-      };
+    'name': name,
+    'completedAt': completedAt.toIso8601String(),
+    'minutes': minutes,
+    'calories': calories,
+    'xp': xp,
+  };
 
   factory WorkoutLog.fromJson(Map<String, dynamic> json) => WorkoutLog(
-        name: json['name'] as String? ?? 'Workout',
-        completedAt: DateTime.tryParse(json['completedAt'] as String? ?? '') ?? DateTime.now(),
-        minutes: json['minutes'] as int? ?? 0,
-        calories: json['calories'] as int? ?? 0,
-        xp: json['xp'] as int? ?? 0,
-      );
+    name: json['name'] as String? ?? 'Workout',
+    completedAt:
+        DateTime.tryParse(json['completedAt'] as String? ?? '') ??
+        DateTime.now(),
+    minutes: json['minutes'] as int? ?? 0,
+    calories: json['calories'] as int? ?? 0,
+    xp: json['xp'] as int? ?? 0,
+  );
+}
+
+class WeightLog {
+  const WeightLog({required this.valueKg, required this.recordedAt});
+
+  final double valueKg;
+  final DateTime recordedAt;
+
+  Map<String, dynamic> toJson() => {
+    'valueKg': valueKg,
+    'recordedAt': recordedAt.toIso8601String(),
+  };
+
+  factory WeightLog.fromJson(Map<String, dynamic> json) => WeightLog(
+    valueKg: (json['valueKg'] as num?)?.toDouble() ?? 0,
+    recordedAt:
+        DateTime.tryParse(json['recordedAt'] as String? ?? '') ??
+        DateTime.now(),
+  );
 }
 
 class NutritionArticle {

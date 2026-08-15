@@ -6,17 +6,17 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'privacy_consent.dart';
 
-/// A single, low-interruption banner shown only at the end of the Home feed.
+/// A low-interruption banner used at natural breaks in the app's feeds.
 /// All development and profile builds use Google's test unit. Only release
 /// Android builds use FitMalaysia's production banner unit.
-class HomeAdBanner extends StatefulWidget {
-  const HomeAdBanner({super.key});
+class FeedAdBanner extends StatefulWidget {
+  const FeedAdBanner({super.key});
 
   @override
-  State<HomeAdBanner> createState() => _HomeAdBannerState();
+  State<FeedAdBanner> createState() => _FeedAdBannerState();
 }
 
-class _HomeAdBannerState extends State<HomeAdBanner> {
+class _FeedAdBannerState extends State<FeedAdBanner> {
   static const _androidTestUnitId = 'ca-app-pub-3940256099942544/9214589741';
   static const _androidProductionUnitId =
       'ca-app-pub-4110950503958596/2401217451';
@@ -43,12 +43,9 @@ class _HomeAdBannerState extends State<HomeAdBanner> {
     await MobileAds.instance.initialize();
     if (!mounted) return;
 
-    final width = (MediaQuery.sizeOf(context).width - 32).truncate();
-    final size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width);
-    if (!mounted || size == null) {
-      _isLoading = false;
-      return;
-    }
+    // A standard banner has a predictable 50dp height. Adaptive banners can
+    // reserve a much taller platform-view slot than their visible creative.
+    final size = AdSize.banner;
 
     final ad = BannerAd(
       adUnitId: kReleaseMode ? _androidProductionUnitId : _androidTestUnitId,
@@ -87,28 +84,16 @@ class _HomeAdBannerState extends State<HomeAdBanner> {
     final banner = _bannerAd;
     if (banner == null) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
-      child: Column(
-        children: [
-          Text(
-            'ADVERTISEMENT',
-            style: TextStyle(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: .45),
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: banner.size.width.toDouble(),
-            height: banner.size.height.toDouble(),
-            child: AdWidget(ad: banner),
-          ),
-        ],
+    return Align(
+      alignment: Alignment.topCenter,
+      heightFactor: 1,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: SizedBox(
+          width: banner.size.width.toDouble(),
+          height: banner.size.height.toDouble(),
+          child: AdWidget(ad: banner),
+        ),
       ),
     );
   }

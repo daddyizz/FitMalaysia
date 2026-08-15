@@ -9,8 +9,12 @@ import 'package:provider/provider.dart';
 
 import 'app_store.dart';
 import 'ad_banner.dart';
+import 'cloud_account_service.dart';
 import 'data.dart';
+import 'health_connect_service.dart';
 import 'models.dart';
+import 'notification_service.dart';
+import 'plan_service.dart';
 import 'privacy_consent.dart';
 
 const _green = Color(0xFF138A5B);
@@ -21,8 +25,7 @@ const _buttonTextLift = Shadow(
 );
 const _nutritionDisclaimer =
     'This is general educational information only and is not medical or dietary advice. Individual needs vary. Speak to a qualified doctor or registered dietitian before making significant changes, especially if you have a health condition, are pregnant, or take medication.';
-const _privacyPolicyUrl =
-    'https://github.com/daddyizz/FitMalaysia/blob/develop/PRIVACY_POLICY.md';
+const _privacyPolicyUrl = 'https://fitmalaysia-134fe.web.app/privacy.html';
 final _shellNavigation = ValueNotifier<int>(0);
 final _waterToastVisible = ValueNotifier<bool>(false);
 final _achievementToast = ValueNotifier<AchievementNotice?>(null);
@@ -292,7 +295,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final name = TextEditingController();
   String level = 'Beginner';
   String goal = 'Improve Fitness';
+  int workoutsPerWeek = 3;
+  int sessionMinutes = 10;
   int page = 0;
+  bool signingIn = false;
+
+  Future<void> _continueWithGoogle() async {
+    setState(() => signingIn = true);
+    final account = context.read<CloudAccountService>();
+    try {
+      final result = await account.signInWithGoogle();
+      if (!mounted) return;
+      if (result.cloudData != null) {
+        await account.restoreBackup(result.cloudData!);
+        if (!mounted) return;
+        if (!context.read<FitLifeStore>().onboarded) {
+          setState(() => page = 1);
+        }
+      } else {
+        await account.keepThisDeviceData();
+        if (mounted) setState(() => page = 1);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(account.lastError ?? 'Google Sign-In failed.')),
+      );
+    } finally {
+      if (mounted) setState(() => signingIn = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -307,8 +339,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'Your name',
       'Fitness level',
       'Your goal',
+      'Build your routine',
     ][page];
-    Widget body = const Text('Your offline fitness companion.');
+    final subtitle = [
+      'Build a plan that fits your life, with or without an account.',
+      'This is how FitMalaysia will greet you.',
+      'Choose the level that feels right for you today.',
+      'Tell us what you want to work towards.',
+      'Set a rhythm that you can actually keep.',
+    ][page];
+    Widget body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(52),
+          ),
+          onPressed: signingIn ? null : _continueWithGoogle,
+          icon: signingIn
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.account_circle_outlined),
+          label: const Text('Continue with Google'),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Google sign-in is optional. Guest data stays on this device only.',
+          style: TextStyle(color: _muted(context), fontSize: 12),
+        ),
+      ],
+    );
     if (page == 1) {
       body = TextField(
         controller: name,
@@ -336,36 +398,150 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         (value) => setState(() => goal = value),
       );
     }
+    if (page == 4) {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Workouts per week',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          _choice(
+            ['2', '3', '4', '5', '6', '7'],
+            '$workoutsPerWeek',
+            (value) => setState(() => workoutsPerWeek = int.parse(value)),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Time available per session',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          _choice(
+            ['5 min', '10 min', '15 min', '20 min'],
+            '$sessionMinutes min',
+            (value) => setState(
+              () => sessionMinutes = int.parse(value.split(' ').first),
+            ),
+          ),
+        ],
+      );
+    }
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(),
-              const Icon(Icons.fitness_center, color: _green, size: 58),
-              const SizedBox(height: 24),
-              Text(title, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 20),
-              body,
-              const Spacer(),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(54),
+              Expanded(
+                child: Align(
+                  alignment: const Alignment(0, -.08),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: Image.asset(
+                              'assets/branding/fitmalaysia-app-icon.png',
+                              width: 64,
+                              height: 64,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                          Text(
+                            page == 0
+                                ? 'START YOUR JOURNEY'
+                                : 'STEP $page OF 4',
+                            style: GoogleFonts.archivo(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            title,
+                            style: GoogleFonts.archivo(
+                              fontSize: page == 0 ? 34 : 32,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -.9,
+                              height: 1.04,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: _muted(context),
+                              fontSize: 15,
+                              height: 1.38,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+                          body,
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  if (page < 3) {
-                    setState(() => page++);
-                  } else {
-                    context.read<FitLifeStore>().completeOnboarding(
-                      profileName: name.text.isEmpty ? 'Friend' : name.text,
-                      level: level,
-                      profileGoal: goal,
-                    );
-                  }
-                },
-                child: Text(page == 3 ? 'Get started' : 'Continue'),
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  if (page > 0) ...[
+                    SizedBox(
+                      height: 54,
+                      child: OutlinedButton.icon(
+                        onPressed: signingIn
+                            ? null
+                            : () => setState(() => page--),
+                        icon: const Icon(Icons.arrow_back, size: 18),
+                        label: const Text('BACK'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: SizedBox(
+                      height: 54,
+                      child: FilledButton(
+                        onPressed: signingIn
+                            ? null
+                            : () {
+                                if (page < 4) {
+                                  setState(() => page++);
+                                } else {
+                                  context
+                                      .read<FitLifeStore>()
+                                      .completeOnboarding(
+                                        profileName: name.text.isEmpty
+                                            ? 'Friend'
+                                            : name.text,
+                                        level: level,
+                                        profileGoal: goal,
+                                        workoutsPerWeek: workoutsPerWeek,
+                                        sessionMinutes: sessionMinutes,
+                                      );
+                                }
+                              },
+                        child: Text(
+                          page == 4
+                              ? 'Build my plan'
+                              : page == 0
+                              ? 'Continue as guest'
+                              : 'Continue',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -591,11 +767,12 @@ class AppPage extends StatelessWidget {
                               color: scheme.onSurface,
                               fontSize: 22,
                               fontWeight: FontWeight.w900,
+                              letterSpacing: -.7,
                             ),
                           ),
                           if (subtitle != null)
                             Padding(
-                              padding: const EdgeInsets.only(top: 2),
+                              padding: EdgeInsets.zero,
                               child: Text(
                                 subtitle!,
                                 style: TextStyle(
@@ -634,22 +811,28 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
-    final workout = workouts.firstWhere(
-      (item) => item.difficulty == store.fitnessLevel,
-      orElse: () => workouts.first,
-    );
-    final workoutProgress = (store.history.isEmpty ? 0.0 : 0.5);
+    final recommendations = PlanService.recommendedWorkouts(store);
+    final todayPlan = PlanService.today(store);
+    final workout = todayPlan.workout;
+    final workoutProgress = store.todayHistory.isEmpty ? 0.0 : 1.0;
     final waterProgress = (store.waterToday / store.waterTarget)
         .clamp(0, 1)
         .toDouble();
     final goalProgress = ((workoutProgress + waterProgress) / 2 * 100).round();
-    final upNext = workouts
-        .where(
-          (item) =>
-              item.difficulty == store.fitnessLevel && item.id != workout.id,
-        )
-        .take(3)
-        .toList();
+    final recentlyCompletedIds = store.history
+        .take(6)
+        .map((item) => item.name)
+        .toSet();
+    final upNext = <Workout>[
+      ...recommendations.where(
+        (item) =>
+            item.id != workout.id && !recentlyCompletedIds.contains(item.name),
+      ),
+      ...recommendations.where(
+        (item) =>
+            item.id != workout.id && recentlyCompletedIds.contains(item.name),
+      ),
+    ].take(3).toList(growable: false);
     return AppPage(
       title: 'Good ${_timeGreeting()}, ${store.name}',
       subtitle: 'Level ${store.level} · ${store.xp} XP',
@@ -674,6 +857,7 @@ class HomePage extends StatelessWidget {
                               style: GoogleFonts.archivo(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w900,
+                                letterSpacing: -.55,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -681,7 +865,7 @@ class HomePage extends StatelessWidget {
                               '“Small steps every day become big results.”',
                               style: TextStyle(
                                 color: Color(0xFFAFBBB3),
-                                fontSize: 14,
+                                fontSize: 12,
                                 height: 1.25,
                               ),
                             ),
@@ -734,6 +918,8 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              _DailyPlanCard(plan: todayPlan, store: store),
               const SizedBox(height: 18),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -779,6 +965,8 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 10),
               GridView.count(
                 shrinkWrap: true,
+                primary: false,
+                padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
                 childAspectRatio: 1.55,
@@ -787,7 +975,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   _StatBox(
                     label: 'WORKOUTS',
-                    value: '${store.history.length}/1',
+                    value: '${store.todayHistory.length}/1',
                     icon: Icons.fitness_center,
                     color: const Color(0xFFA7E33D),
                   ),
@@ -798,20 +986,27 @@ class HomePage extends StatelessWidget {
                     color: const Color(0xFF77BEFF),
                   ),
                   _StatBox(
-                    label: 'CALORIES',
-                    value: '${store.totalCalories}',
-                    icon: Icons.local_fire_department_outlined,
-                    color: const Color(0xFFFFA66D),
+                    label: store.healthConnectEnabled ? 'STEPS' : 'CALORIES',
+                    value: store.healthConnectEnabled
+                        ? '${store.currentHealthSteps}'
+                        : '${store.todayCalories}',
+                    icon: store.healthConnectEnabled
+                        ? Icons.directions_walk_outlined
+                        : Icons.local_fire_department_outlined,
+                    color: store.healthConnectEnabled
+                        ? const Color(0xFF74C7EC)
+                        : const Color(0xFFFFA66D),
                   ),
                   _StatBox(
                     label: 'ACTIVE TIME',
-                    value: '${store.totalMinutes}m',
+                    value: '${store.todayMinutes}m',
                     icon: Icons.timer_outlined,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const FeedAdBanner(),
+              const SizedBox(height: 8),
               Text(
                 'QUICK LOG',
                 style: TextStyle(
@@ -840,6 +1035,7 @@ class HomePage extends StatelessWidget {
                     child: _QuickLogButton(
                       icon: Icons.calculate_outlined,
                       label: 'BMI',
+                      color: const Color(0xFFA7E33D),
                       onTap: () => _shellNavigation.value = 2,
                     ),
                   ),
@@ -848,6 +1044,7 @@ class HomePage extends StatelessWidget {
                     child: _QuickLogButton(
                       icon: Icons.monitor_weight_outlined,
                       label: 'WEIGHT',
+                      color: const Color(0xFFFFA66D),
                       onTap: () => logWeight(context),
                     ),
                   ),
@@ -882,7 +1079,6 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               _WeekActivity(history: store.history),
-              const HomeAdBanner(),
             ],
           ),
           ValueListenableBuilder<bool>(
@@ -947,6 +1143,164 @@ void _showWaterLoggedToast() {
   _waterToastTimer = Timer(
     const Duration(seconds: 2),
     () => _waterToastVisible.value = false,
+  );
+}
+
+class _DailyPlanCard extends StatelessWidget {
+  const _DailyPlanCard({required this.plan, required this.store});
+
+  final PlanDay plan;
+  final FitLifeStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final workoutDone = store.todayHistory.isNotEmpty;
+    final waterDone = store.waterToday >= store.waterTarget;
+    final checkInDone = store.checkedInToday;
+    final completed = [
+      workoutDone,
+      waterDone,
+      checkInDone,
+    ].where((done) => done).length;
+    final isRecovery = plan.type == PlanDayType.recovery;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${plan.rescheduled ? 'ADAPTIVE PLAN · CATCH-UP' : '28-DAY PLAN'} · DAY ${plan.dayNumber}',
+                        style: TextStyle(
+                          color: _sectionLabel(context),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isRecovery ? 'Recovery & Mobility' : 'Training Day',
+                        style: GoogleFonts.archivo(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        plan.workout.name,
+                        style: TextStyle(color: _muted(context), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _elevated(context),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Text(
+                    '$completed/3',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            LinearProgressIndicator(
+              value: completed / 3,
+              minHeight: 7,
+              borderRadius: BorderRadius.circular(10),
+              backgroundColor: _elevated(context),
+            ),
+            const SizedBox(height: 12),
+            _MissionRow(
+              icon: isRecovery
+                  ? Icons.self_improvement_outlined
+                  : Icons.fitness_center,
+              label: isRecovery
+                  ? 'Complete today\'s recovery'
+                  : 'Complete today\'s workout',
+              done: workoutDone,
+            ),
+            _MissionRow(
+              icon: Icons.water_drop_outlined,
+              label: 'Reach ${store.waterTarget} glasses of water',
+              done: waterDone,
+            ),
+            _MissionRow(
+              icon: Icons.waving_hand_outlined,
+              label: 'Daily check-in',
+              done: checkInDone,
+              action: checkInDone
+                  ? null
+                  : () => context.read<FitLifeStore>().checkInToday(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MissionRow extends StatelessWidget {
+  const _MissionRow({
+    required this.icon,
+    required this.label,
+    required this.done,
+    this.action,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool done;
+  final VoidCallback? action;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Row(
+      children: [
+        Icon(
+          done ? Icons.check_circle : icon,
+          size: 18,
+          color: done ? Theme.of(context).colorScheme.primary : _muted(context),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: done ? _muted(context) : null,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              decoration: done ? TextDecoration.lineThrough : null,
+            ),
+          ),
+        ),
+        if (action != null)
+          TextButton(
+            onPressed: action,
+            child: const Text(
+              'CHECK IN',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
+            ),
+          ),
+      ],
+    ),
   );
 }
 
@@ -1036,7 +1390,7 @@ class _StatBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1054,7 +1408,7 @@ class _StatBox extends StatelessWidget {
               Icon(icon, size: 17, color: color),
             ],
           ),
-          const Spacer(),
+          const SizedBox(height: 9),
           Text(
             value,
             style: GoogleFonts.archivo(
@@ -1348,22 +1702,38 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
       title: 'Workouts',
       subtitle: '${listed.length} of ${workouts.length} workouts',
       actions: [
-        IconButton(
-          color: _muted(context),
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Favorites are saved with the heart button.'),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: _elevated(context),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            color: _muted(context),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SavedWorkoutsPage()),
             ),
+            icon: const Icon(Icons.favorite_outline),
           ),
-          icon: const Icon(Icons.favorite_outline),
         ),
-        IconButton(
-          color: _muted(context),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const WorkoutHistoryPage()),
+        const SizedBox(width: 6),
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: _elevated(context),
+            shape: BoxShape.circle,
           ),
-          icon: const Icon(Icons.history),
+          child: IconButton(
+            color: _muted(context),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const WorkoutHistoryPage()),
+            ),
+            icon: const Icon(Icons.history),
+          ),
         ),
       ],
       child: CustomScrollView(
@@ -1374,24 +1744,39 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      onChanged: (value) => setState(() => query = value),
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: query.isEmpty
-                            ? null
-                            : IconButton(
-                                onPressed: () => setState(() => query = ''),
-                                icon: const Icon(Icons.close),
-                              ),
-                        hintText: 'Search workouts, muscles, equipment...',
+                    child: SizedBox(
+                      height: 36,
+                      child: TextField(
+                        onChanged: (value) => setState(() => query = value),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                          prefixIconConstraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
+                          ),
+                          prefixIcon: const Icon(Icons.search, size: 19),
+                          prefixIconColor: _muted(context),
+                          suffixIconColor: _muted(context),
+                          suffixIcon: query.isEmpty
+                              ? null
+                              : IconButton(
+                                  onPressed: () => setState(() => query = ''),
+                                  icon: const Icon(Icons.close, size: 19),
+                                ),
+                          hintText: 'Search workouts, muscles, equipment...',
+                          hintStyle: TextStyle(
+                            color: _muted(context),
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   SizedBox(
-                    height: 48,
-                    width: 48,
+                    height: 36,
+                    width: 36,
                     child: FilledButton(
                       onPressed: () =>
                           setState(() => showFilters = !showFilters),
@@ -1416,7 +1801,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
           ),
           SliverToBoxAdapter(
             child: SizedBox(
-              height: 44,
+              height: 36,
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
@@ -1510,8 +1895,36 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
             ),
           SliverList(
             delegate: SliverChildBuilderDelegate(
-              (context, index) => WorkoutTile(workout: listed[index]),
-              childCount: listed.length,
+              (context, index) {
+                // One ad after the first four workouts, then every twelve.
+                // This gives each banner enough content around it to feel like
+                // a natural feed break rather than an interruption.
+                final adAfter = [
+                  4,
+                  for (var position = 16; position < listed.length; position += 12)
+                    position,
+                ].where((position) => position < listed.length).toList();
+                var adsBefore = 0;
+                for (final position in adAfter) {
+                  final adIndex = position + adsBefore;
+                  if (index == adIndex) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 6),
+                      child: FeedAdBanner(),
+                    );
+                  }
+                  if (index > adIndex) adsBefore++;
+                }
+                return WorkoutTile(workout: listed[index - adsBefore]);
+              },
+              childCount: listed.length +
+                  [
+                    4,
+                    for (var position = 16;
+                        position < listed.length;
+                        position += 12)
+                      position,
+                  ].where((position) => position < listed.length).length,
               addAutomaticKeepAlives: false,
             ),
           ),
@@ -1560,32 +1973,34 @@ class _FilterPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IntrinsicWidth(
-    child: Material(
-      color: active
-          ? Theme.of(context).colorScheme.primary
-          : _elevated(context),
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onTap,
+    child: SizedBox(
+      height: 36,
+      child: Material(
+        color: active
+            ? Theme.of(context).colorScheme.primary
+            : _elevated(context),
         borderRadius: BorderRadius.circular(999),
-        child: Container(
-          alignment: Alignment.center,
-          constraints: const BoxConstraints(minHeight: 36),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: active ? Colors.transparent : _pageBorder(context),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: active ? Colors.transparent : _pageBorder(context),
+              ),
             ),
-          ),
-          child: Text(
-            label,
-            softWrap: false,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: active ? const Color(0xFFEAF0EA) : _muted(context),
-              shadows: active ? const [_buttonTextLift] : null,
+            child: Text(
+              label,
+              softWrap: false,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: active ? const Color(0xFFEAF0EA) : _muted(context),
+                shadows: active ? const [_buttonTextLift] : null,
+              ),
             ),
           ),
         ),
@@ -1649,10 +2064,23 @@ class _WorkoutPhotoCard extends StatelessWidget {
                   right: 12,
                   child: IconButton.filledTonal(
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0x990C120F),
+                      backgroundColor: _isDark(context)
+                          ? const Color(0x990C120F)
+                          : const Color(0xB8E8ECE8),
+                      shape: CircleBorder(
+                        side: BorderSide(
+                          color: _isDark(context)
+                              ? const Color(0x26FFFFFF)
+                              : const Color(0xCCFFFFFF),
+                        ),
+                      ),
                       foregroundColor: isFavorite
-                          ? const Color(0xFFA7E33D)
-                          : Colors.white,
+                          ? (_isDark(context)
+                                ? const Color(0xFFA7E33D)
+                                : const Color(0xFF182318))
+                          : (_isDark(context)
+                                ? Colors.white
+                                : const Color(0xFF182318)),
                     ),
                     onPressed: () =>
                         context.read<FitLifeStore>().toggleFavorite(workout.id),
@@ -1756,6 +2184,7 @@ class _ProgressPageState extends State<ProgressPage> {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
+    final personalPlan = PlanService.build(store);
     final levelProgress = (store.xp % 100) / 100;
     final weekStart = DateTime(
       DateTime.now().year,
@@ -1827,8 +2256,20 @@ class _ProgressPageState extends State<ProgressPage> {
             ),
           ),
           const SizedBox(height: 12),
+          Text(
+            'YOUR ACTIVITY AT A GLANCE',
+            style: TextStyle(
+              color: _sectionLabel(context),
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 10),
           GridView.count(
             shrinkWrap: true,
+            primary: false,
+            padding: EdgeInsets.zero,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
             childAspectRatio: 1.4,
@@ -1865,7 +2306,8 @@ class _ProgressPageState extends State<ProgressPage> {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const FeedAdBanner(),
+          const SizedBox(height: 10),
           Container(
             height: 48,
             padding: const EdgeInsets.all(4),
@@ -1901,6 +2343,7 @@ class _ProgressPageState extends State<ProgressPage> {
               history: store.history,
               totalMinutes: store.totalMinutes,
               totalCalories: store.totalCalories,
+              plan: personalPlan,
             ),
           if (tab == 1) const _ProgressBody(),
           if (tab == 2)
@@ -1929,7 +2372,7 @@ class _ProgressStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1950,21 +2393,21 @@ class _ProgressStat extends StatelessWidget {
               Icon(icon, color: color, size: 18),
             ],
           ),
-          const Spacer(),
+          const SizedBox(height: 9),
           Text(
             value,
             style: GoogleFonts.archivo(
-              fontSize: 20,
+              fontSize: 19,
               fontWeight: FontWeight.w900,
               color: color,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 1),
           Text(
             hint,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: _muted(context), fontSize: 11),
+            style: TextStyle(color: _muted(context), fontSize: 10),
           ),
         ],
       ),
@@ -2022,9 +2465,11 @@ class _ProgressActivity extends StatelessWidget {
     required this.history,
     required this.totalMinutes,
     required this.totalCalories,
+    required this.plan,
   });
   final int weekWorkouts, weeklyTarget, totalMinutes, totalCalories;
   final List<WorkoutLog> history;
+  final List<PlanDay> plan;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -2055,6 +2500,8 @@ class _ProgressActivity extends StatelessWidget {
         ),
       ),
       const SizedBox(height: 12),
+      _PlanCalendar(plan: plan),
+      const SizedBox(height: 12),
       Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -2083,6 +2530,99 @@ class _ProgressActivity extends StatelessWidget {
       ),
     ],
   );
+}
+
+class _PlanCalendar extends StatelessWidget {
+  const _PlanCalendar({required this.plan});
+
+  final List<PlanDay> plan;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final completed = plan.where((day) => day.completed).length;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Your 28-Day Plan',
+                    style: GoogleFonts.archivo(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -.25,
+                    ),
+                  ),
+                ),
+                Text(
+                  '$completed/28 active days',
+                  style: TextStyle(color: _muted(context), fontSize: 11),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                crossAxisSpacing: 6,
+                mainAxisSpacing: 6,
+              ),
+              itemCount: plan.length,
+              itemBuilder: (context, index) {
+                final day = plan[index];
+                final isToday = DateUtils.isSameDay(day.date, today);
+                final isFuture = day.date.isAfter(today);
+                final isRecovery = day.type == PlanDayType.recovery;
+                return Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: day.completed
+                        ? Theme.of(context).colorScheme.primary
+                        : isRecovery
+                        ? _elevated(context)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isToday
+                          ? Theme.of(context).colorScheme.primary
+                          : _pageBorder(context),
+                      width: isToday ? 2 : 1,
+                    ),
+                  ),
+                  child: isFuture
+                      ? Text(
+                          '${day.dayNumber}',
+                          style: TextStyle(
+                            color: _muted(context),
+                            fontSize: 10,
+                          ),
+                        )
+                      : Icon(
+                          day.completed
+                              ? Icons.check
+                              : isRecovery
+                              ? Icons.self_improvement_outlined
+                              : Icons.fitness_center,
+                          size: 15,
+                          color: day.completed
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : _muted(context),
+                        ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MonthMetric extends StatelessWidget {
@@ -2457,9 +2997,12 @@ class _ProgressAwards extends StatelessWidget {
                     ),
                     title: Text(
                       award.$2,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                    subtitle: Text(award.$3),
+                    subtitle: Text(award.$3, style: const TextStyle(fontSize: 11)),
                     trailing: award.$4
                         ? const _Badge(text: 'Unlocked', green: true)
                         : null,
@@ -2561,8 +3104,9 @@ class WorkoutFeatureCard extends StatelessWidget {
                       workout.name,
                       style: GoogleFonts.archivo(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: 25,
                         fontWeight: FontWeight.w900,
+                        letterSpacing: -.65,
                       ),
                     ),
                     const SizedBox(height: 7),
@@ -2572,7 +3116,7 @@ class WorkoutFeatureCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFFD1D8D3),
-                        fontSize: 14,
+                        fontSize: 12,
                         height: 1.3,
                       ),
                     ),
@@ -2638,8 +3182,14 @@ class WorkoutFeatureCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0x99000000),
-                    border: Border.all(color: const Color(0x26FFFFFF)),
+                    color: _isDark(context)
+                        ? const Color(0x99000000)
+                        : const Color(0xB8E8ECE8),
+                    border: Border.all(
+                      color: _isDark(context)
+                          ? const Color(0x26FFFFFF)
+                          : const Color(0xCCFFFFFF),
+                    ),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
@@ -2647,8 +3197,12 @@ class WorkoutFeatureCard extends StatelessWidget {
                     icon: Icon(
                       isFavorite ? Icons.favorite : Icons.favorite_border,
                       color: isFavorite
-                          ? const Color(0xFFA7E33D)
-                          : Colors.white,
+                          ? (_isDark(context)
+                                ? const Color(0xFFA7E33D)
+                                : const Color(0xFF182318))
+                          : (_isDark(context)
+                                ? Colors.white
+                                : const Color(0xFF182318)),
                     ),
                   ),
                 ),
@@ -2666,24 +3220,43 @@ class _Badge extends StatelessWidget {
   final String text;
   final bool green;
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: green ? const Color(0xFFA7E33D) : Colors.black54,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      child: Text(
-        text.toUpperCase(),
-        style: TextStyle(
-          color: green ? const Color(0xFF10210A) : Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: .9,
+  Widget build(BuildContext context) {
+    final isDark = _isDark(context);
+    final radius = BorderRadius.circular(20);
+    final content = DecoratedBox(
+      decoration: BoxDecoration(
+        color: green
+            ? const Color(0xFFA7E33D)
+            : (isDark ? Colors.black54 : const Color(0xB8E8ECE8)),
+        borderRadius: radius,
+        border: green || isDark
+            ? null
+            : Border.all(color: const Color(0xCCFFFFFF)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Text(
+          text.toUpperCase(),
+          style: TextStyle(
+            color: green || !isDark
+                ? const Color(0xFF10210A)
+                : Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: .9,
+          ),
         ),
       ),
-    ),
-  );
+    );
+    if (green || isDark) return content;
+    return ClipRRect(
+      borderRadius: radius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: content,
+      ),
+    );
+  }
 }
 
 class _DetailBadge extends StatelessWidget {
@@ -2871,39 +3444,47 @@ class _WaterButton extends StatelessWidget {
   final bool enabled;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 48,
-    height: 48,
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: _isDark(context)
-                ? const Color(0x40000000)
-                : const Color(0x40152015),
-            blurRadius: 12,
-            spreadRadius: 1,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: _elevated(context),
-        shape: const CircleBorder(),
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          customBorder: const CircleBorder(),
-          child: Icon(
-            icon,
-            color: enabled
-                ? Theme.of(context).colorScheme.onSecondary
-                : _muted(context),
+  Widget build(BuildContext context) {
+    final isAdd = enabled && icon == Icons.add;
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: isAdd ? Border.all(color: Colors.white) : null,
+          boxShadow: [
+            BoxShadow(
+              color: _isDark(context)
+                  ? const Color(0x40000000)
+                  : const Color(0x40152015),
+              blurRadius: 12,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: isAdd
+              ? Theme.of(context).colorScheme.primary
+              : _elevated(context),
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: enabled ? onTap : null,
+            customBorder: const CircleBorder(),
+            child: Icon(
+              icon,
+              color: isAdd
+                  ? Colors.white
+                  : (enabled
+                        ? Theme.of(context).colorScheme.onSecondary
+                        : _muted(context)),
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _NutritionArticleTile extends StatelessWidget {
@@ -3146,6 +3727,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
+    final account = context.watch<CloudAccountService>();
     final streak = _currentStreak(store.history);
     return AppPage(
       title: 'Profile',
@@ -3175,23 +3757,7 @@ class ProfilePage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      (store.name.isEmpty ? 'F' : store.name[0]).toUpperCase(),
-                      style: GoogleFonts.archivo(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontSize: 25,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
+                  _ProfileAvatar(store: store, account: account),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -3206,7 +3772,7 @@ class ProfilePage extends StatelessWidget {
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 1),
                         Text(
                           'Level ${store.level} · ${store.xp} XP · ${store.fitnessLevel}',
                           style: const TextStyle(
@@ -3214,7 +3780,7 @@ class ProfilePage extends StatelessWidget {
                             fontSize: 12,
                           ),
                         ),
-                        const SizedBox(height: 9),
+                        const SizedBox(height: 5),
                         LinearProgressIndicator(
                           value: (store.xp % 100) / 100,
                           minHeight: 7,
@@ -3232,6 +3798,8 @@ class ProfilePage extends StatelessWidget {
           const SizedBox(height: 12),
           GridView.count(
             shrinkWrap: true,
+            primary: false,
+            padding: EdgeInsets.zero,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
             childAspectRatio: 1.45,
@@ -3268,7 +3836,8 @@ class ProfilePage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const FeedAdBanner(),
+          const SizedBox(height: 10),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -3278,7 +3847,7 @@ class ProfilePage extends StatelessWidget {
                   Text(
                     'Your Details',
                     style: GoogleFonts.archivo(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -.25,
                     ),
@@ -3286,10 +3855,14 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 14),
                   TextFormField(
                     initialValue: store.name,
+                    style: const TextStyle(fontSize: 14),
                     onChanged: (value) => context
                         .read<FitLifeStore>()
                         .updateProfile(profileName: value),
-                    decoration: const InputDecoration(labelText: 'Name'),
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      labelStyle: TextStyle(fontSize: 13),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -3298,6 +3871,7 @@ class ProfilePage extends StatelessWidget {
                         child: TextFormField(
                           initialValue:
                               store.heightCm?.toStringAsFixed(0) ?? '',
+                          style: const TextStyle(fontSize: 14),
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
@@ -3313,6 +3887,7 @@ class ProfilePage extends StatelessWidget {
                           },
                           decoration: const InputDecoration(
                             labelText: 'Height (cm)',
+                            labelStyle: TextStyle(fontSize: 13),
                           ),
                         ),
                       ),
@@ -3324,11 +3899,13 @@ class ProfilePage extends StatelessWidget {
                           child: InputDecorator(
                             decoration: const InputDecoration(
                               labelText: 'Weight (kg)',
+                              labelStyle: TextStyle(fontSize: 13),
                             ),
                             child: Text(
                               store.weightKg == null
                                   ? 'Log weight'
                                   : '${store.weightKg!.toStringAsFixed(1)} kg',
+                              style: const TextStyle(fontSize: 14),
                             ),
                           ),
                         ),
@@ -3338,7 +3915,7 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 18),
                   const Text(
                     'Fitness level',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -3357,7 +3934,7 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 18),
                   const Text(
                     'Goal',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -3396,7 +3973,7 @@ class ProfilePage extends StatelessWidget {
                   Text(
                     'Targets',
                     style: GoogleFonts.archivo(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -.25,
                     ),
@@ -3404,7 +3981,7 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Text(
                     'Workouts Per Week',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -3421,6 +3998,26 @@ class ProfilePage extends StatelessWidget {
                         .toList(),
                   ),
                   const SizedBox(height: 18),
+                  const Text(
+                    'Minutes Per Session',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [5, 10, 15, 20]
+                        .map(
+                          (value) => _ProfileChoiceChip(
+                            label: '$value min',
+                            active: store.preferredSessionMinutes == value,
+                            onTap: () =>
+                                store.setPreferredSessionMinutes(value),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 18),
                   const Row(
                     children: [
                       Icon(
@@ -3431,7 +4028,10 @@ class ProfilePage extends StatelessWidget {
                       SizedBox(width: 6),
                       Text(
                         'Glasses of water per day',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),
@@ -3449,6 +4049,26 @@ class ProfilePage extends StatelessWidget {
                         )
                         .toList(),
                   ),
+                  const SizedBox(height: 18),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              side: BorderSide.none,
+              elevation: 0,
+            ),
+            onPressed: store.restartPlan,
+            icon: Icon(
+              Icons.restart_alt,
+              shadows: _isDark(context) ? null : const [_buttonTextLift],
+            ),
+            label: Text(
+              'RESTART 28-DAY PLAN',
+              style: TextStyle(
+                shadows: _isDark(context) ? null : const [_buttonTextLift],
+              ),
+            ),
+          ),
                 ],
               ),
             ),
@@ -3459,14 +4079,17 @@ class ProfilePage extends StatelessWidget {
               alignment: Alignment.centerLeft,
               minimumSize: const Size.fromHeight(50),
               backgroundColor: _elevated(context),
-              foregroundColor: Theme.of(context).colorScheme.onSecondary,
+              foregroundColor: _muted(context),
             ),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const WorkoutHistoryPage()),
             ),
             icon: const Icon(Icons.notifications_none),
-            label: const Text('WORKOUT HISTORY'),
+            label: const Text(
+              'WORKOUT HISTORY',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+            ),
           ),
           const SizedBox(height: 8),
           FilledButton.icon(
@@ -3474,19 +4097,171 @@ class ProfilePage extends StatelessWidget {
               alignment: Alignment.centerLeft,
               minimumSize: const Size.fromHeight(50),
               backgroundColor: _elevated(context),
-              foregroundColor: Theme.of(context).colorScheme.onSecondary,
+              foregroundColor: _muted(context),
             ),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SettingsPage()),
             ),
             icon: const Icon(Icons.settings_outlined),
-            label: const Text('SETTINGS & DATA'),
+            label: const Text(
+              'SETTINGS & DATA',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.store, required this.account});
+
+  final FitLifeStore store;
+  final CloudAccountService account;
+
+  String get _emoji => switch (store.avatarStyle) {
+    'male' => '👨',
+    'female' => '👩',
+    _ => '🐱',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final photoUrl = account.user?.photoURL;
+    final usesGooglePhoto = account.signedIn && photoUrl != null && photoUrl.isNotEmpty;
+    final borderColor = Theme.of(context).colorScheme.primary.withValues(alpha: .55);
+    return Semantics(
+      button: !usesGooglePhoto,
+      label: usesGooglePhoto ? 'Google profile photo' : 'Choose profile avatar',
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: usesGooglePhoto ? null : () => _chooseAvatar(context),
+          customBorder: const CircleBorder(),
+          child: Container(
+            width: 64,
+            height: 64,
+            alignment: Alignment.center,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: .18),
+              shape: BoxShape.circle,
+              border: Border.all(color: borderColor, width: 1.5),
+            ),
+            child: usesGooglePhoto
+                ? Image.network(
+                    photoUrl,
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Text(
+                      _emoji,
+                      style: const TextStyle(fontSize: 31),
+                    ),
+                  )
+                : Text(_emoji, style: const TextStyle(fontSize: 31)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _chooseAvatar(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Choose your avatar',
+                style: GoogleFonts.archivo(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  for (final option in const [
+                    ('male', '👨', 'Male'),
+                    ('female', '👩', 'Female'),
+                    ('cat', '🐱', 'Cat'),
+                  ])
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: option.$1 == 'cat' ? 0 : 8,
+                        ),
+                        child: _AvatarChoice(
+                          emoji: option.$2,
+                          label: option.$3,
+                          active: store.avatarStyle == option.$1,
+                          onTap: () {
+                            store.setAvatarStyle(option.$1);
+                            Navigator.pop(sheetContext);
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AvatarChoice extends StatelessWidget {
+  const _AvatarChoice({
+    required this.emoji,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: active ? Theme.of(context).colorScheme.primary : _elevated(context),
+    borderRadius: BorderRadius.circular(16),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 28)),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: active
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.onSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _ProfileChoiceChip extends StatelessWidget {
@@ -3530,12 +4305,128 @@ class _ProfileChoiceChip extends StatelessWidget {
               textScaler: TextScaler.noScaling,
               style: TextStyle(
                 color: foreground,
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: active ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class SavedWorkoutsPage extends StatelessWidget {
+  const SavedWorkoutsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<FitLifeStore>();
+    final scheme = Theme.of(context).colorScheme;
+    final saved = workouts
+        .where((workout) => store.favorites.contains(workout.id))
+        .toList(growable: false);
+    return Scaffold(
+      extendBody: true,
+      body: Column(
+        children: [
+          Container(
+            color: _pageHeader(context),
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: _pageBorder(context))),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: _elevated(context),
+                        border: Border.all(color: _pageBorder(context)),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        color: scheme.onSurface,
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SAVED WORKOUTS',
+                            style: GoogleFonts.archivo(
+                              color: scheme.onSurface,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -.55,
+                            ),
+                          ),
+                          Text(
+                            saved.isEmpty
+                                ? 'No saved workouts yet'
+                                : '${saved.length} saved workouts',
+                            style: TextStyle(
+                              color: _muted(context),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: saved.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.favorite_outline,
+                            size: 42,
+                            color: _muted(context),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Save workouts you want to return to.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: _muted(context)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+                    itemCount: saved.length,
+                    itemBuilder: (_, index) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: WorkoutTile(workout: saved[index]),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _GlassBottomNav(
+        selectedIndex: 1,
+        onSelected: (value) {
+          _shellNavigation.value = value;
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
       ),
     );
   }
@@ -3734,6 +4625,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
+    final account = context.watch<CloudAccountService>();
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final headerColor = isDark
@@ -3833,6 +4725,101 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Card(
+                  key: const ValueKey('settings-cloud-backup-card'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.cloud_done_outlined,
+                              color: scheme.primary,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Account & Cloud Backup',
+                                style: GoogleFonts.archivo(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -.25,
+                                ),
+                              ),
+                            ),
+                            _Badge(
+                              text: account.signedIn ? 'Protected' : 'Guest',
+                              green: account.signedIn,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          account.signedIn
+                              ? '${account.user?.email ?? 'Google account'} · Changes are backed up automatically.'
+                              : 'Continue with Google to restore your profile and progress after reinstalling or changing phones.',
+                          style: TextStyle(
+                            color: _muted(context),
+                            fontSize: 12,
+                          ),
+                        ),
+                        if (account.lastError != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            account.lastError!,
+                            style: const TextStyle(
+                              color: Color(0xFFE26B6E),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        if (!account.signedIn)
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: account.busy
+                                  ? null
+                                  : () => _signInAndResolveBackup(context),
+                              icon: account.busy
+                                  ? const SizedBox.square(
+                                      dimension: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.account_circle_outlined),
+                              label: const Text('CONTINUE WITH GOOGLE'),
+                            ),
+                          )
+                        else
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: account.busy
+                                      ? null
+                                      : () => _syncCloudBackup(context),
+                                  icon: const Icon(Icons.sync),
+                                  label: const Text('SYNC NOW'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              OutlinedButton(
+                                onPressed: account.busy
+                                    ? null
+                                    : account.signOut,
+                                child: const Text('SIGN OUT'),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
                   key: const ValueKey('settings-preferences-card'),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -3871,16 +4858,169 @@ class SettingsPage extends StatelessWidget {
                           label: 'Water Reminders',
                           description: 'Nudge yourself to keep hydrated',
                           value: store.waterReminders,
-                          onChanged: (value) =>
-                              store.updatePreferences(water: value),
+                          onChanged: (value) async {
+                            if (value &&
+                                !await NotificationService.instance
+                                    .requestPermission()) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Notification permission was not granted.',
+                                    ),
+                                  ),
+                                );
+                              }
+                              return;
+                            }
+                            store.updatePreferences(water: value);
+                            await NotificationService.instance.scheduleWater(
+                              enabled: value,
+                            );
+                          },
                         ),
                         Divider(height: 1, color: _pageBorder(context)),
                         _SettingToggle(
                           label: 'Workout Reminders',
                           description: 'Daily prompt to keep your streak alive',
                           value: store.workoutReminders,
-                          onChanged: (value) =>
-                              store.updatePreferences(workout: value),
+                          onChanged: (value) async {
+                            if (value &&
+                                !await NotificationService.instance
+                                    .requestPermission()) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Notification permission was not granted.',
+                                    ),
+                                  ),
+                                );
+                              }
+                              return;
+                            }
+                            store.updatePreferences(workout: value);
+                            await NotificationService.instance.scheduleWorkout(
+                              enabled: value,
+                              hour: store.workoutReminderHour,
+                              minute: store.workoutReminderMinute,
+                            );
+                          },
+                        ),
+                        if (store.workoutReminders)
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.schedule_outlined),
+                            title: const Text('Workout reminder time'),
+                            trailing: Text(
+                              TimeOfDay(
+                                hour: store.workoutReminderHour,
+                                minute: store.workoutReminderMinute,
+                              ).format(context),
+                              style: TextStyle(
+                                color: scheme.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            onTap: () async {
+                              final selected = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay(
+                                  hour: store.workoutReminderHour,
+                                  minute: store.workoutReminderMinute,
+                                ),
+                              );
+                              if (selected == null || !context.mounted) return;
+                              store.setWorkoutReminderTime(
+                                selected.hour,
+                                selected.minute,
+                              );
+                              await NotificationService.instance
+                                  .scheduleWorkout(
+                                    enabled: true,
+                                    hour: selected.hour,
+                                    minute: selected.minute,
+                                  );
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  key: const ValueKey('settings-health-connect-card'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.health_and_safety_outlined,
+                              color: scheme.primary,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Health Connect',
+                                style: GoogleFonts.archivo(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -.25,
+                                ),
+                              ),
+                            ),
+                            _Badge(
+                              text: store.healthConnectEnabled
+                                  ? 'Connected'
+                                  : 'Optional',
+                              green: store.healthConnectEnabled,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          store.healthConnectEnabled
+                              ? '${store.currentHealthSteps} steps today · Sync weight and FitMalaysia workouts.'
+                              : 'Bring in steps and weight, and save completed FitMalaysia workouts to Health Connect.',
+                          style: TextStyle(
+                            color: _muted(context),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: () => _syncHealthConnect(
+                                  context,
+                                  store,
+                                  connect: !store.healthConnectEnabled,
+                                ),
+                                icon: Icon(
+                                  store.healthConnectEnabled
+                                      ? Icons.sync
+                                      : Icons.link,
+                                ),
+                                label: Text(
+                                  store.healthConnectEnabled
+                                      ? 'SYNC NOW'
+                                      : 'CONNECT',
+                                ),
+                              ),
+                            ),
+                            if (store.healthConnectEnabled) ...[
+                              const SizedBox(width: 8),
+                              IconButton.outlined(
+                                tooltip: 'Disconnect',
+                                onPressed: store.disconnectHealthConnect,
+                                icon: const Icon(Icons.link_off),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
@@ -4009,7 +5149,9 @@ class SettingsPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Your fitness information stays on this device. Ads may process limited technical data; see our Privacy Policy for details.',
+                          account.signedIn
+                              ? 'Your fitness information is stored on this device and in your private cloud backup. Delete everything removes both the backup and your FitMalaysia account.'
+                              : 'Your fitness information stays on this device while using guest mode. Ads may process limited technical data; see our Privacy Policy for details.',
                           style: TextStyle(
                             color: isDark
                                 ? const Color(0xFFAFBBB3)
@@ -4029,7 +5171,9 @@ class SettingsPage extends StatelessWidget {
                             ),
                             style: FilledButton.styleFrom(
                               backgroundColor: scheme.secondary,
-                              foregroundColor: scheme.onSecondary,
+                              foregroundColor: isDark
+                                  ? Colors.white
+                                  : scheme.onSecondary,
                               elevation: 0,
                             ),
                             child: const Text('RESET PROGRESS'),
@@ -4068,6 +5212,137 @@ class SettingsPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _signInAndResolveBackup(BuildContext context) async {
+    final account = context.read<CloudAccountService>();
+    try {
+      final result = await account.signInWithGoogle();
+      if (!context.mounted) return;
+      if (result.cloudData == null) {
+        await account.keepThisDeviceData();
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cloud backup is now active.')),
+        );
+        return;
+      }
+      final useCloud = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Backup found'),
+          content: const Text(
+            'FitMalaysia found progress saved with this Google account. Use the cloud backup, or keep the data currently on this phone?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('KEEP THIS PHONE'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('USE CLOUD BACKUP'),
+            ),
+          ],
+        ),
+      );
+      if (!context.mounted) return;
+      if (useCloud == true) {
+        await account.restoreBackup(result.cloudData!);
+      } else {
+        await account.keepThisDeviceData();
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            useCloud == true
+                ? 'Cloud backup restored.'
+                : 'This phone is now backed up.',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(account.lastError ?? 'Google Sign-In failed.')),
+      );
+    }
+  }
+
+  Future<void> _syncCloudBackup(BuildContext context) async {
+    final account = context.read<CloudAccountService>();
+    try {
+      await account.uploadNow();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Cloud backup updated.')));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(account.lastError ?? 'Cloud sync failed.')),
+      );
+    }
+  }
+
+  Future<void> _syncHealthConnect(
+    BuildContext context,
+    FitLifeStore store, {
+    required bool connect,
+  }) async {
+    try {
+      final service = HealthConnectService.instance;
+      if (!await service.isAvailable()) {
+        if (!context.mounted) return;
+        final install = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Health Connect required'),
+            content: const Text(
+              'Install or update Health Connect to sync steps, weight and workouts.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('NOT NOW'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('OPEN STORE'),
+              ),
+            ],
+          ),
+        );
+        if (install == true) await service.installOrUpdate();
+        return;
+      }
+      final snapshot = connect
+          ? await service.connectAndSync()
+          : await service.sync();
+      if (!context.mounted) return;
+      if (snapshot == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Health Connect access was not granted.'),
+          ),
+        );
+        return;
+      }
+      store.applyHealthConnectData(
+        steps: snapshot.steps,
+        weight: snapshot.weightKg,
+      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${snapshot.steps} steps synced')));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Health Connect could not be synced.')),
+      );
+    }
   }
 
   Future<void> _confirmDataAction(
@@ -4114,7 +5389,7 @@ class SettingsPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     deleteEverything
-                        ? 'This removes your profile, goals, history and achievements, and restarts onboarding.'
+                        ? 'This removes your profile, goals, history and achievements, and restarts onboarding. If signed in, it also deletes your cloud backup and FitMalaysia account.'
                         : 'This clears your workout history, weight log, water log, XP and achievements. Your profile stays.',
                     style: TextStyle(
                       color: mutedColor,
@@ -4168,7 +5443,21 @@ class SettingsPage extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
     final store = context.read<FitLifeStore>();
     if (deleteEverything) {
-      await store.resetEverything();
+      final account = context.read<CloudAccountService>();
+      try {
+        if (account.signedIn) await account.deleteAccountAndCloudData();
+        await store.resetEverything();
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              account.lastError ?? 'Your data could not be deleted. Try again.',
+            ),
+          ),
+        );
+        return;
+      }
       if (!context.mounted) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
     } else {
@@ -4237,19 +5526,29 @@ class PrivacyPolicyPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Last updated: 11 August 2026',
+                    'Last updated: 12 August 2026',
                     style: TextStyle(color: _muted(context), fontSize: 12),
                   ),
                   const SizedBox(height: 22),
                   const _PolicySection(
                     title: 'Your fitness information',
                     body:
-                        'FitMalaysia stores your profile, weight, BMI, water logs, workout history, favourites, achievements and settings locally on your device. The app does not require an account and does not send this fitness information to our server.',
+                        'FitMalaysia stores your profile, goals, weight, BMI, water logs, workout history, favourites, achievements and settings locally on your device. In guest mode this information stays in local app storage.',
+                  ),
+                  const _PolicySection(
+                    title: 'Google account and cloud backup',
+                    body:
+                        'If you choose Continue with Google, Firebase Authentication processes your Google account identifier, email, display name and profile image. FitMalaysia stores a private backup of your profile, goals, progress and settings in Cloud Firestore so it can be restored on another phone. Cloud backup is optional and is protected by user-specific access rules.',
+                  ),
+                  const _PolicySection(
+                    title: 'Health Connect',
+                    body:
+                        'With your permission, FitMalaysia reads steps and weight from Health Connect and writes completed FitMalaysia workouts. This data is used only for fitness features, not advertising or sale. You can revoke access in Android settings.',
                   ),
                   const _PolicySection(
                     title: 'Advertising',
                     body:
-                        'FitMalaysia displays a limited banner advertisement on the Home screen. Google Mobile Ads may process technical information such as IP address, device and advertising identifiers, app interactions and diagnostics for advertising, fraud prevention and analytics.',
+                        'FitMalaysia displays a limited banner advertisement on the Home screen. Google Mobile Ads may process technical information such as IP address, device and advertising identifiers, app interactions and diagnostics for advertising, fraud prevention and analytics. Fitness and Health Connect data is not shared for personalised advertising.',
                   ),
                   const _PolicySection(
                     title: 'Consent and choices',
@@ -4259,7 +5558,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                   const _PolicySection(
                     title: 'Data deletion',
                     body:
-                        'Use Settings > Delete everything to remove FitMalaysia’s locally stored fitness information from this device. Uninstalling the app also removes its local app storage.',
+                        'Use Settings > Delete everything to remove local information. If signed in, this also deletes your FitMalaysia cloud backup and account. Uninstalling removes local app storage but does not remove an existing cloud backup.',
                   ),
                   const _PolicySection(
                     title: 'Health information',
@@ -4354,7 +5653,7 @@ class _AppearanceOption extends StatelessWidget {
             backgroundColor: active ? activeColor : scheme.secondary,
             foregroundColor: active
                 ? (isDark ? scheme.onPrimary : Colors.white)
-                : scheme.onSecondary,
+                : (isDark ? Colors.white : scheme.onSecondary),
             elevation: 0,
           ),
           child: FittedBox(
@@ -4798,6 +6097,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
   int seconds = 45;
   int elapsedSeconds = 0;
   bool paused = false;
+  bool resting = false;
   bool _completed = false;
 
   @override
@@ -4814,12 +6114,27 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
         seconds--;
         elapsedSeconds++;
       });
-    } else if (current < widget.workout.exercises.length - 1) {
+    } else if (resting) {
       setState(() {
         current++;
+        resting = false;
         seconds = 45;
         elapsedSeconds++;
       });
+      _playTimerCue();
+    } else if (current < widget.workout.exercises.length - 1) {
+      final useRest = context.read<FitLifeStore>().restBetweenExercises;
+      setState(() {
+        if (useRest) {
+          resting = true;
+          seconds = 15;
+        } else {
+          current++;
+          seconds = 45;
+        }
+        elapsedSeconds++;
+      });
+      _playTimerCue();
     } else {
       elapsedSeconds++;
       _finishWorkout();
@@ -4830,10 +6145,17 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     if (current < widget.workout.exercises.length - 1) {
       setState(() {
         current++;
+        resting = false;
         seconds = 45;
       });
     } else {
       _finishWorkout();
+    }
+  }
+
+  void _playTimerCue() {
+    if (context.read<FitLifeStore>().timerSounds) {
+      SystemSound.play(SystemSoundType.alert);
     }
   }
 
@@ -4844,6 +6166,19 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     final achievement = context.read<FitLifeStore>().completeWorkout(
       widget.workout,
     );
+    final store = context.read<FitLifeStore>();
+    if (store.healthConnectEnabled) {
+      final end = DateTime.now();
+      final durationSeconds = elapsedSeconds.clamp(60, 86400);
+      unawaited(
+        HealthConnectService.instance.writeWorkout(
+          title: widget.workout.name,
+          start: end.subtract(Duration(seconds: durationSeconds)),
+          end: end,
+          calories: widget.workout.calories,
+        ),
+      );
+    }
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => WorkoutCompletePage(
@@ -4889,7 +6224,9 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         Text(
-                          'Exercise ${current + 1} of $total · ${45 - seconds}s elapsed',
+                          resting
+                              ? 'Rest before exercise ${current + 2} of $total'
+                              : 'Exercise ${current + 1} of $total · ${45 - seconds}s elapsed',
                           style: const TextStyle(
                             color: Color(0xFFAFBBB3),
                             fontSize: 12,
@@ -4942,7 +6279,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Text(
-                              'WORK',
+                              resting ? 'REST' : 'WORK',
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontSize: 11,
@@ -4957,7 +6294,9 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                widget.workout.exercises[current],
+                                resting
+                                    ? 'Next: ${widget.workout.exercises[current + 1]}'
+                                    : widget.workout.exercises[current],
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.archivo(
                                   fontSize: 32,
@@ -4977,7 +6316,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                                   child: Padding(
                                     padding: EdgeInsets.all(ringSize * .026),
                                     child: CircularProgressIndicator(
-                                      value: seconds / 45,
+                                      value: seconds / (resting ? 15 : 45),
                                       strokeWidth: ringSize * .090,
                                       backgroundColor: _elevated(context),
                                       color: Theme.of(
@@ -5021,10 +6360,12 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            exerciseInstructions[widget
-                                    .workout
-                                    .exercises[current]] ??
-                                'Move with control and maintain a comfortable breathing pace.',
+                            resting
+                                ? 'Breathe slowly, loosen up and get ready for the next move.'
+                                : exerciseInstructions[widget
+                                          .workout
+                                          .exercises[current]] ??
+                                      'Move with control and maintain a comfortable breathing pace.',
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -5242,18 +6583,26 @@ Widget _choice(
   List<String> values,
   String selected,
   ValueChanged<String> onSelected,
-) => Wrap(
-  spacing: 8,
-  runSpacing: 8,
-  children: values
-      .map(
-        (value) => ChoiceChip(
-          label: Text(value),
-          selected: value == selected,
+) => Builder(
+  builder: (context) {
+    final dark = _isDark(context);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: values.map((value) {
+        final active = value == selected;
+        return ChoiceChip(
+          label: Text(
+            value,
+            style: TextStyle(color: active && dark ? Colors.white : null),
+          ),
+          selected: active,
+          checkmarkColor: dark ? Colors.white : null,
           onSelected: (_) => onSelected(value),
-        ),
-      )
-      .toList(),
+        );
+      }).toList(),
+    );
+  },
 );
 int _currentStreak(List<WorkoutLog> history) {
   final days = history
