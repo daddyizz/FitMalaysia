@@ -145,20 +145,23 @@ class _FitMalaysiaIntro extends StatelessWidget {
               Container(
                 width: 94,
                 height: 94,
-                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF09110B),
                   borderRadius: BorderRadius.circular(26),
-                  border: Border.all(color: const Color(0xFF39633B)),
                   boxShadow: const [
                     BoxShadow(
-                      color: Color(0x8A70B520),
-                      blurRadius: 34,
-                      spreadRadius: 8,
+                      color: Color(0x5270B520),
+                      blurRadius: 28,
+                      spreadRadius: 3,
                     ),
                   ],
                 ),
-                child: Image.asset('assets/branding/fitmalaysia-app-icon.png'),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: Image.asset(
+                    'assets/branding/fitmalaysia-app-icon.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
               const SizedBox(height: 36),
               RichText(
@@ -6729,6 +6732,9 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
+                  final timerForeground = _isDark(context)
+                      ? Theme.of(context).colorScheme.onSurface
+                      : Theme.of(context).scaffoldBackgroundColor;
                   final widthBasedRing = MediaQuery.sizeOf(context).width * .82;
                   final heightBasedRing = math.max(
                     170.0,
@@ -6847,7 +6853,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                                           style: GoogleFonts.archivo(
                                             fontSize: ringSize * .19,
                                             fontWeight: FontWeight.w900,
-                                            color: Colors.white,
+                                            color: timerForeground,
                                           ),
                                         ),
                                       ),
@@ -6857,7 +6863,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                                       'REMAINING',
                                       textScaler: TextScaler.noScaling,
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: .76),
+                                        color: timerForeground.withValues(alpha: .76),
                                         fontSize: ringSize * .03,
                                         letterSpacing: 1.1,
                                         fontWeight: FontWeight.w700,
