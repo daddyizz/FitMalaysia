@@ -50,6 +50,19 @@ Color _pageHeader(BuildContext context) => _isDark(context)
 Color _pageBorder(BuildContext context) =>
     _isDark(context) ? const Color(0x26FFFFFF) : const Color(0x14000000);
 
+void _syncGoogleDisplayName(FitLifeStore store, String? rawGoogleName) {
+  final googleName = rawGoogleName?.trim();
+  final currentName = store.name.trim().toLowerCase();
+  if (googleName == null ||
+      googleName.isEmpty ||
+      !(currentName.isEmpty ||
+          currentName == 'guest' ||
+          currentName == 'friend')) {
+    return;
+  }
+  store.updateProfile(profileName: googleName);
+}
+
 class FitLifeApp extends StatelessWidget {
   const FitLifeApp({super.key});
 
@@ -628,7 +641,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           setState(() => page = 1);
         }
       } else {
-        final googleName = result.user.displayName?.trim();
+        final googleName = result.googleDisplayName ?? result.user.displayName;
         if (googleName != null &&
             googleName.isNotEmpty &&
             name.text.trim().isEmpty) {
@@ -5563,16 +5576,10 @@ class SettingsPage extends StatelessWidget {
       final result = await account.signInWithGoogle();
       if (!context.mounted) return;
       if (result.cloudData == null) {
-        final googleName = result.user.displayName?.trim();
-        final store = context.read<FitLifeStore>();
-        final currentName = store.name.trim().toLowerCase();
-        if (googleName != null &&
-            googleName.isNotEmpty &&
-            (currentName.isEmpty ||
-                currentName == 'guest' ||
-                currentName == 'friend')) {
-          store.updateProfile(profileName: googleName);
-        }
+        _syncGoogleDisplayName(
+          context.read<FitLifeStore>(),
+          result.googleDisplayName ?? result.user.displayName,
+        );
         await account.keepThisDeviceData();
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -5607,6 +5614,10 @@ class SettingsPage extends StatelessWidget {
         await account.keepThisDeviceData();
       }
       if (!context.mounted) return;
+      _syncGoogleDisplayName(
+        context.read<FitLifeStore>(),
+        result.googleDisplayName ?? result.user.displayName,
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

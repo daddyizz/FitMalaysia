@@ -9,10 +9,15 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'app_store.dart';
 
 class CloudSignInResult {
-  const CloudSignInResult({required this.user, this.cloudData});
+  const CloudSignInResult({
+    required this.user,
+    this.cloudData,
+    this.googleDisplayName,
+  });
 
   final User user;
   final Map<String, dynamic>? cloudData;
+  final String? googleDisplayName;
 
   bool get hasCloudBackup => cloudData != null;
 }
@@ -88,9 +93,19 @@ class CloudAccountService extends ChangeNotifier {
       if (signedInUser == null) {
         throw StateError('Google Sign-In did not return an account.');
       }
+      final googleDisplayName = googleUser.displayName?.trim();
+      if (googleDisplayName != null &&
+          googleDisplayName.isNotEmpty &&
+          signedInUser.displayName != googleDisplayName) {
+        await signedInUser.updateDisplayName(googleDisplayName);
+      }
       final cloudData = await _download(signedInUser.uid);
       _pendingBackupChoice = true;
-      return CloudSignInResult(user: signedInUser, cloudData: cloudData);
+      return CloudSignInResult(
+        user: signedInUser,
+        cloudData: cloudData,
+        googleDisplayName: googleDisplayName ?? signedInUser.displayName,
+      );
     } catch (error) {
       lastError = _friendlyError(error);
       rethrow;
