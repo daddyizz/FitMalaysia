@@ -19,6 +19,9 @@ import 'plan_service.dart';
 import 'privacy_consent.dart';
 
 const _green = Color(0xFF138A5B);
+// Keeps the last card comfortably clear of the floating navigation bar,
+// including Android's system gesture area.
+const _bottomNavContentInset = 144.0;
 const _buttonTextLift = Shadow(
   color: Color(0x660B2613),
   blurRadius: 1.6,
@@ -1173,7 +1176,12 @@ class HomePage extends StatelessWidget {
       child: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              _bottomNavContentInset,
+            ),
             children: [
               Card(
                 child: Padding(
@@ -2271,7 +2279,9 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
               addAutomaticKeepAlives: false,
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 108)),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: _bottomNavContentInset),
+          ),
         ],
       ),
     );
@@ -2541,7 +2551,7 @@ class _ProgressPageState extends State<ProgressPage> {
       title: 'Progress',
       subtitle: 'Level ${store.level} · ${store.xp} XP',
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, _bottomNavContentInset),
         children: [
           Card(
             child: Padding(
@@ -3653,7 +3663,7 @@ class NutritionPage extends StatelessWidget {
     title: 'Nutrition',
     subtitle: 'Fuel and hydration basics',
     child: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, _bottomNavContentInset),
       children: [
         const _NutritionWaterCard(),
         const SizedBox(height: 22),
@@ -3948,7 +3958,12 @@ class NutritionDetailPage extends StatelessWidget {
         ),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              _bottomNavContentInset,
+            ),
             children: [
               Card(
                 child: Padding(
@@ -4097,7 +4112,7 @@ class ProfilePage extends StatelessWidget {
         ),
       ],
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, _bottomNavContentInset),
         children: [
           Card(
             child: Padding(
@@ -4767,7 +4782,12 @@ class SavedWorkoutsPage extends StatelessWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      16,
+                      16,
+                      _bottomNavContentInset,
+                    ),
                     itemCount: saved.length,
                     itemBuilder: (_, index) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -4897,7 +4917,12 @@ class WorkoutHistoryPage extends StatelessWidget {
                     ),
                   )
                 : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      16,
+                      16,
+                      _bottomNavContentInset,
+                    ),
                     itemCount: history.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
@@ -5036,7 +5061,12 @@ class SettingsPage extends StatelessWidget {
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 108),
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                _bottomNavContentInset,
+              ),
               children: [
                 Card(
                   key: const ValueKey('settings-appearance-card'),
