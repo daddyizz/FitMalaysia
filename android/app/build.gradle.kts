@@ -60,6 +60,9 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    // Mobile Ads currently brings an old WorkManager transitively. Pin the
+    // current stable runtime so its startup database is compatible with AGP 9.
+    implementation("androidx.work:work-runtime:2.11.2")
 }
 
 kotlin {

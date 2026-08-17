@@ -66,16 +66,17 @@ class FitLifeApp extends StatelessWidget {
           : ThemeMode.dark,
       theme: _lightTheme(),
       darkTheme: _nightTheme(),
-      builder: (context, child) =>
-          Stack(
-            children: [
-              ?child,
-              const _CelebrationOverlay(),
-              const _AchievementToast(),
-            ],
-          ),
+      builder: (context, child) => Stack(
+        children: [
+          ?child,
+          const _CelebrationOverlay(),
+          const _AchievementToast(),
+        ],
+      ),
       home: _LaunchGate(
-        child: store.onboarded ? const FitLifeShell() : const OnboardingScreen(),
+        child: store.onboarded
+            ? const FitLifeShell()
+            : const OnboardingScreen(),
       ),
     );
   }
@@ -172,8 +173,14 @@ class _FitMalaysiaIntro extends StatelessWidget {
                     letterSpacing: -1.5,
                   ),
                   children: const [
-                    TextSpan(text: 'FIT', style: TextStyle(color: Color(0xFFA7E33D))),
-                    TextSpan(text: 'MALAYSIA', style: TextStyle(color: Colors.white)),
+                    TextSpan(
+                      text: 'FIT',
+                      style: TextStyle(color: Color(0xFFA7E33D)),
+                    ),
+                    TextSpan(
+                      text: 'MALAYSIA',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ],
                 ),
               ),
@@ -621,6 +628,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           setState(() => page = 1);
         }
       } else {
+        final googleName = result.user.displayName?.trim();
+        if (googleName != null &&
+            googleName.isNotEmpty &&
+            name.text.trim().isEmpty) {
+          name.text = googleName;
+        }
         await account.keepThisDeviceData();
         if (mounted) setState(() => page = 1);
       }
@@ -2211,7 +2224,11 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                 // a natural feed break rather than an interruption.
                 final adAfter = [
                   4,
-                  for (var position = 16; position < listed.length; position += 12)
+                  for (
+                    var position = 16;
+                    position < listed.length;
+                    position += 12
+                  )
                     position,
                 ].where((position) => position < listed.length).toList();
                 var adsBefore = 0;
@@ -2227,12 +2244,15 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                 }
                 return WorkoutTile(workout: listed[index - adsBefore]);
               },
-              childCount: listed.length +
+              childCount:
+                  listed.length +
                   [
                     4,
-                    for (var position = 16;
-                        position < listed.length;
-                        position += 12)
+                    for (
+                      var position = 16;
+                      position < listed.length;
+                      position += 12
+                    )
                       position,
                   ].where((position) => position < listed.length).length,
               addAutomaticKeepAlives: false,
@@ -3312,7 +3332,10 @@ class _ProgressAwards extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    subtitle: Text(award.$3, style: const TextStyle(fontSize: 11)),
+                    subtitle: Text(
+                      award.$3,
+                      style: const TextStyle(fontSize: 11),
+                    ),
                     trailing: award.$4
                         ? const _Badge(text: 'Unlocked', green: true)
                         : null,
@@ -3548,9 +3571,7 @@ class _Badge extends StatelessWidget {
         child: Text(
           text.toUpperCase(),
           style: TextStyle(
-            color: green || !isDark
-                ? const Color(0xFF10210A)
-                : Colors.white,
+            color: green || !isDark ? const Color(0xFF10210A) : Colors.white,
             fontSize: 10,
             fontWeight: FontWeight.w900,
             letterSpacing: .9,
@@ -4363,25 +4384,29 @@ class ProfilePage extends StatelessWidget {
                         .toList(),
                   ),
                   const SizedBox(height: 18),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-              side: BorderSide.none,
-              elevation: 0,
-            ),
-            onPressed: store.restartPlan,
-            icon: Icon(
-              Icons.restart_alt,
-              shadows: _isDark(context) ? null : const [_buttonTextLift],
-            ),
-            label: Text(
-              'RESTART 28-DAY PLAN',
-              style: TextStyle(
-                shadows: _isDark(context) ? null : const [_buttonTextLift],
-              ),
-            ),
-          ),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      side: BorderSide.none,
+                      elevation: 0,
+                    ),
+                    onPressed: store.restartPlan,
+                    icon: Icon(
+                      Icons.restart_alt,
+                      shadows: _isDark(context)
+                          ? null
+                          : const [_buttonTextLift],
+                    ),
+                    label: Text(
+                      'RESTART 28-DAY PLAN',
+                      style: TextStyle(
+                        shadows: _isDark(context)
+                            ? null
+                            : const [_buttonTextLift],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -4443,8 +4468,11 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final photoUrl = account.user?.photoURL;
-    final usesGooglePhoto = account.signedIn && photoUrl != null && photoUrl.isNotEmpty;
-    final borderColor = Theme.of(context).colorScheme.primary.withValues(alpha: .55);
+    final usesGooglePhoto =
+        account.signedIn && photoUrl != null && photoUrl.isNotEmpty;
+    final borderColor = Theme.of(
+      context,
+    ).colorScheme.primary.withValues(alpha: .55);
     return Semantics(
       button: !usesGooglePhoto,
       label: usesGooglePhoto ? 'Google profile photo' : 'Choose profile avatar',
@@ -4460,7 +4488,9 @@ class _ProfileAvatar extends StatelessWidget {
             alignment: Alignment.center,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: .18),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: .18),
               shape: BoxShape.circle,
               border: Border.all(color: borderColor, width: 1.5),
             ),
@@ -4470,10 +4500,8 @@ class _ProfileAvatar extends StatelessWidget {
                     width: 64,
                     height: 64,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Text(
-                      _emoji,
-                      style: const TextStyle(fontSize: 31),
-                    ),
+                    errorBuilder: (_, _, _) =>
+                        Text(_emoji, style: const TextStyle(fontSize: 31)),
                   )
                 : Text(_emoji, style: const TextStyle(fontSize: 31)),
           ),
@@ -4650,7 +4678,9 @@ class SavedWorkoutsPage extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: _pageBorder(context))),
+                  border: Border(
+                    bottom: BorderSide(color: _pageBorder(context)),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -5533,6 +5563,16 @@ class SettingsPage extends StatelessWidget {
       final result = await account.signInWithGoogle();
       if (!context.mounted) return;
       if (result.cloudData == null) {
+        final googleName = result.user.displayName?.trim();
+        final store = context.read<FitLifeStore>();
+        final currentName = store.name.trim().toLowerCase();
+        if (googleName != null &&
+            googleName.isNotEmpty &&
+            (currentName.isEmpty ||
+                currentName == 'guest' ||
+                currentName == 'friend')) {
+          store.updateProfile(profileName: googleName);
+        }
         await account.keepThisDeviceData();
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -6806,9 +6846,10 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                                           Image.asset(
                                             'assets/workouts/${widget.workout.id}.jpg',
                                             fit: BoxFit.cover,
-                                            errorBuilder: (_, _, _) => Container(
-                                              color: _elevated(context),
-                                            ),
+                                            errorBuilder: (_, _, _) =>
+                                                Container(
+                                                  color: _elevated(context),
+                                                ),
                                           ),
                                           const DecoratedBox(
                                             decoration: BoxDecoration(
@@ -6863,7 +6904,9 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                                       'REMAINING',
                                       textScaler: TextScaler.noScaling,
                                       style: TextStyle(
-                                        color: timerForeground.withValues(alpha: .76),
+                                        color: timerForeground.withValues(
+                                          alpha: .76,
+                                        ),
                                         fontSize: ringSize * .03,
                                         letterSpacing: 1.1,
                                         fontWeight: FontWeight.w700,
@@ -6899,31 +6942,37 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
               decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: _pageBorder(context))),
               ),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(54),
+                  const FeedAdBanner(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(54),
+                          ),
+                          onPressed: () => setState(() => paused = !paused),
+                          icon: Icon(paused ? Icons.play_arrow : Icons.pause),
+                          label: Text(paused ? 'RESUME' : 'PAUSE'),
+                        ),
                       ),
-                      onPressed: () => setState(() => paused = !paused),
-                      icon: Icon(paused ? Icons.play_arrow : Icons.pause),
-                      label: Text(paused ? 'RESUME' : 'PAUSE'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(120, 54),
-                      backgroundColor: _elevated(context),
-                      foregroundColor: Theme.of(
-                        context,
-                      ).colorScheme.onSecondary,
-                      elevation: 0,
-                    ),
-                    onPressed: _skipExercise,
-                    icon: const Icon(Icons.skip_next),
-                    label: const Text('SKIP'),
+                      const SizedBox(width: 12),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(120, 54),
+                          backgroundColor: _elevated(context),
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onSecondary,
+                          elevation: 0,
+                        ),
+                        onPressed: _skipExercise,
+                        icon: const Icon(Icons.skip_next),
+                        label: const Text('SKIP'),
+                      ),
+                    ],
                   ),
                 ],
               ),

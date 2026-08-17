@@ -66,12 +66,12 @@ FitMalaysia menyediakan pendidikan kecergasan dan nutrisi umum sahaja. Ia bukan 
 
 Use these six phone screenshots in this order:
 
-1. `assets/store-listing/01-96-workouts-for-every-level.png`
-2. `assets/store-listing/02-train-anywhere-no-account-needed.png`
-3. `assets/store-listing/03-follow-the-timer-finish-strong.png`
-4. `assets/store-listing/04-track-bmi-weight-progress.png`
-5. `assets/store-listing/05-fuel-better-nutrition-guides.png`
-6. `assets/store-listing/06-daily-fitness-journey.png`
+1. `assets/store-listing/google-play/screenshots/01-guided-workouts.png`
+2. `assets/store-listing/google-play/screenshots/02-todays-pick.png`
+3. `assets/store-listing/google-play/screenshots/03-96-workouts.png`
+4. `assets/store-listing/google-play/screenshots/04-progress.png`
+5. `assets/store-listing/google-play/screenshots/05-fuel-and-hydration.png`
+6. `assets/store-listing/google-play/screenshots/06-your-journey.png`
 
 Prepared Play-ready assets are in `assets/store-listing/google-play/`:
 
