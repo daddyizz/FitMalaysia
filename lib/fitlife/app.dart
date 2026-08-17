@@ -30,8 +30,10 @@ const _privacyPolicyUrl = 'https://fitmalaysia-134fe.web.app/privacy.html';
 final _shellNavigation = ValueNotifier<int>(0);
 final _waterToastVisible = ValueNotifier<bool>(false);
 final _achievementToast = ValueNotifier<AchievementNotice?>(null);
+final _celebrationToken = ValueNotifier<int?>(null);
 Timer? _waterToastTimer;
 Timer? _achievementToastTimer;
+Timer? _celebrationTimer;
 
 bool _isDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
@@ -65,7 +67,13 @@ class FitLifeApp extends StatelessWidget {
       theme: _lightTheme(),
       darkTheme: _nightTheme(),
       builder: (context, child) =>
-          Stack(children: [?child, const _AchievementToast()]),
+          Stack(
+            children: [
+              ?child,
+              const _CelebrationOverlay(),
+              const _AchievementToast(),
+            ],
+          ),
       home: _LaunchGate(
         child: store.onboarded ? const FitLifeShell() : const OnboardingScreen(),
       ),
@@ -347,6 +355,118 @@ void _showAchievementToast(AchievementNotice achievement) {
     const Duration(seconds: 6),
     _dismissAchievementToast,
   );
+}
+
+void _showConfetti() {
+  _celebrationTimer?.cancel();
+  _celebrationToken.value = DateTime.now().microsecondsSinceEpoch;
+  _celebrationTimer = Timer(const Duration(milliseconds: 3600), () {
+    _celebrationToken.value = null;
+  });
+}
+
+class _CelebrationOverlay extends StatelessWidget {
+  const _CelebrationOverlay();
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<int?>(
+    valueListenable: _celebrationToken,
+    builder: (_, token, _) => token == null
+        ? const SizedBox.shrink()
+        : IgnorePointer(child: _ConfettiBurst(key: ValueKey(token))),
+  );
+}
+
+class _ConfettiBurst extends StatefulWidget {
+  const _ConfettiBurst({super.key});
+
+  @override
+  State<_ConfettiBurst> createState() => _ConfettiBurstState();
+}
+
+class _ConfettiBurstState extends State<_ConfettiBurst>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3500),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: AnimatedBuilder(
+      animation: _controller,
+      builder: (_, _) => CustomPaint(
+        painter: _ConfettiPainter(progress: _controller.value),
+        child: const SizedBox.expand(),
+      ),
+    ),
+  );
+}
+
+class _ConfettiPainter extends CustomPainter {
+  const _ConfettiPainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const colors = [
+      Color(0xFFA7E33D),
+      Color(0xFF77BEFF),
+      Color(0xFFFFC94A),
+      Color(0xFFFF8FBA),
+      Color(0xFFFFA66D),
+    ];
+    final fade = ((1 - progress) * 1.5).clamp(0.0, 1.0);
+    for (var index = 0; index < 56; index++) {
+      final seed = index * 37.17;
+      final startX = (math.sin(seed) * .5 + .5) * size.width;
+      final drift = math.sin(seed * 2.3 + progress * 7) * 52;
+      final startY = -18 - (index % 7) * 15.0;
+      final distance = size.height * (.72 + (index % 6) * .08);
+      final y = startY + distance * Curves.easeIn.transform(progress);
+      final paint = Paint()
+        ..color = colors[index % colors.length].withValues(alpha: fade);
+      canvas.save();
+      canvas.translate(startX + drift, y);
+      canvas.rotate(seed + progress * 9);
+      final pieceWidth = 6.0 + (index % 3) * 2;
+      final pieceHeight = 11.0 + (index % 4) * 2;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: pieceWidth,
+            height: pieceHeight,
+          ),
+          const Radius.circular(2),
+        ),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ConfettiPainter oldDelegate) =>
+      oldDelegate.progress != progress;
+}
+
+void _addWaterAndCelebrate(BuildContext context, int amount) {
+  final goalReached = context.read<FitLifeStore>().addWater(amount);
+  if (goalReached) _showConfetti();
 }
 
 void _dismissAchievementToast() {
@@ -1210,7 +1330,7 @@ class HomePage extends StatelessWidget {
                       label: 'WATER',
                       color: Color(0xFF77BEFF),
                       onTap: () {
-                        context.read<FitLifeStore>().addWater(1);
+                        _addWaterAndCelebrate(context, 1);
                         _showWaterLoggedToast();
                       },
                     ),
@@ -1835,7 +1955,7 @@ class WaterCard extends StatelessWidget {
                   icon: const Icon(Icons.remove_circle_outline),
                 ),
                 IconButton(
-                  onPressed: () => store.addWater(1),
+                  onPressed: () => _addWaterAndCelebrate(context, 1),
                   icon: const Icon(Icons.add_circle, color: _green),
                 ),
               ],
@@ -3596,7 +3716,10 @@ class _NutritionWaterCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                _WaterButton(icon: Icons.add, onTap: () => store.addWater(1)),
+                _WaterButton(
+                  icon: Icons.add,
+                  onTap: () => _addWaterAndCelebrate(context, 1),
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -6520,6 +6643,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     final achievement = context.read<FitLifeStore>().completeWorkout(
       widget.workout,
     );
+    _showConfetti();
     final store = context.read<FitLifeStore>();
     if (store.healthConnectEnabled) {
       final end = DateTime.now();
@@ -6666,6 +6790,37 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
+                                Positioned.fill(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(ringSize * .125),
+                                    child: ClipOval(
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          Image.asset(
+                                            'assets/workouts/${widget.workout.id}.jpg',
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, _, _) => Container(
+                                              color: _elevated(context),
+                                            ),
+                                          ),
+                                          const DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                                colors: [
+                                                  Color(0x39000000),
+                                                  Color(0xAA000000),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 Positioned.fill(
                                   child: Padding(
                                     padding: EdgeInsets.all(ringSize * .026),

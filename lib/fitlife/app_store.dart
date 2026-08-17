@@ -276,7 +276,7 @@ class FitLifeStore extends ChangeNotifier {
     _changed();
   }
 
-  void addWater(int amount) {
+  bool addWater(int amount) {
     final todayKey = _dateKey(DateTime.now());
     final previous = waterByDate[todayKey] ?? 0;
     final next = (previous + amount).clamp(0, 50).toInt();
@@ -285,12 +285,14 @@ class FitLifeStore extends ChangeNotifier {
     } else {
       waterByDate[todayKey] = next;
     }
-    if (previous < waterTarget &&
+    final goalReached = previous < waterTarget &&
         next >= waterTarget &&
-        waterGoalRewardedDates.add(todayKey)) {
+        waterGoalRewardedDates.add(todayKey);
+    if (goalReached) {
       xp += 10;
     }
     _changed();
+    return goalReached;
   }
 
   void toggleFavorite(String id) {
