@@ -6810,8 +6810,8 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                                                 begin: Alignment.topCenter,
                                                 end: Alignment.bottomCenter,
                                                 colors: [
-                                                  Color(0x39000000),
-                                                  Color(0xAA000000),
+                                                  Color(0x70000000),
+                                                  Color(0xC6000000),
                                                 ],
                                               ),
                                             ),
@@ -6847,6 +6847,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                                           style: GoogleFonts.archivo(
                                             fontSize: ringSize * .19,
                                             fontWeight: FontWeight.w900,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       ),
@@ -6856,7 +6857,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                                       'REMAINING',
                                       textScaler: TextScaler.noScaling,
                                       style: TextStyle(
-                                        color: _muted(context),
+                                        color: Colors.white.withValues(alpha: .76),
                                         fontSize: ringSize * .03,
                                         letterSpacing: 1.1,
                                         fontWeight: FontWeight.w700,
