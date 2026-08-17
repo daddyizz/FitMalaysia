@@ -20,6 +20,7 @@ class _FeedAdBannerState extends State<FeedAdBanner> {
   static const _androidTestUnitId = 'ca-app-pub-3940256099942544/9214589741';
   static const _androidProductionUnitId =
       'ca-app-pub-4110950503958596/2401217451';
+  static const _slotHeight = 66.0;
 
   BannerAd? _bannerAd;
   bool _isLoading = false;
@@ -39,7 +40,7 @@ class _FeedAdBannerState extends State<FeedAdBanner> {
         !PrivacyConsent.instance.canRequestAds) {
       return;
     }
-    _isLoading = true;
+    setState(() => _isLoading = true);
     await MobileAds.instance.initialize();
     if (!mounted) return;
 
@@ -65,7 +66,7 @@ class _FeedAdBannerState extends State<FeedAdBanner> {
         },
         onAdFailedToLoad: (ad, _) {
           ad.dispose();
-          _isLoading = false;
+          if (mounted) setState(() => _isLoading = false);
         },
       ),
     );
@@ -82,17 +83,26 @@ class _FeedAdBannerState extends State<FeedAdBanner> {
   @override
   Widget build(BuildContext context) {
     final banner = _bannerAd;
-    if (banner == null) return const SizedBox.shrink();
+    // Reserve the final banner size as soon as an ad is requested. Without
+    // this, the feed shifts down by 66px after AdMob responds and can look as
+    // though content has slipped underneath the floating navigation bar.
+    if (banner == null) {
+      return _isLoading
+          ? const SizedBox(height: _slotHeight)
+          : const SizedBox.shrink();
+    }
 
-    return Align(
-      alignment: Alignment.topCenter,
-      heightFactor: 1,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: SizedBox(
-          width: banner.size.width.toDouble(),
-          height: banner.size.height.toDouble(),
-          child: AdWidget(ad: banner),
+    return SizedBox(
+      height: _slotHeight,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: SizedBox(
+            width: banner.size.width.toDouble(),
+            height: banner.size.height.toDouble(),
+            child: AdWidget(ad: banner),
+          ),
         ),
       ),
     );
