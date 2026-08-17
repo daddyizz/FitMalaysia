@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import 'app_store.dart';
 import 'ad_banner.dart';
@@ -1236,8 +1235,6 @@ class HomePage extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              _YoutubeDemoCard(workout: workout),
               const SizedBox(height: 16),
               _SpotifyPlaylistCard(workout: workout),
               const SizedBox(height: 24),
@@ -6241,191 +6238,6 @@ class WorkoutDetailPage extends StatelessWidget {
       ),
     );
   }
-}
-
-class _YoutubeDemo {
-  const _YoutubeDemo({
-    required this.videoId,
-    required this.channel,
-    required this.title,
-  });
-
-  final String videoId;
-  final String channel;
-  final String title;
-}
-
-_YoutubeDemo _youtubeDemoFor(Workout workout) => switch (workout.category) {
-  'Beginner' => const _YoutubeDemo(
-    videoId: 'nUKKnkw7oAM',
-    channel: 'growingannanas',
-    title: 'Daily strength · no equipment',
-  ),
-  'Full Body' => const _YoutubeDemo(
-    videoId: 'G1RVPkcGuao',
-    channel: 'growingannanas',
-    title: 'Full body bodyweight workout',
-  ),
-  'Cardio' => const _YoutubeDemo(
-    videoId: '0GdRAislzQg',
-    channel: 'growingannanas',
-    title: 'Standing cardio HIIT',
-  ),
-  'Lower Body' || 'Legs' => const _YoutubeDemo(
-    videoId: 'k6kZTMsBzTk',
-    channel: 'growingannanas',
-    title: 'Low-impact lower body workout',
-  ),
-  'Abs/Core' => const _YoutubeDemo(
-    videoId: '7nIOqf23Ec0',
-    channel: 'growingannanas',
-    title: 'Strong abs and core workout',
-  ),
-  'Home Workout' || 'No Equipment' => const _YoutubeDemo(
-    videoId: 'oFP5buFFvBo',
-    channel: 'growingannanas',
-    title: 'No-equipment strength workout',
-  ),
-  'Upper Body' || 'Chest' => const _YoutubeDemo(
-    videoId: 'WdXdF2zVjVI',
-    channel: 'FitnessBlender',
-    title: 'Upper body strength without weights',
-  ),
-  'Back' => const _YoutubeDemo(
-    videoId: 'V76ouvP7k6Q',
-    channel: 'FitnessBlender',
-    title: 'Mobility for spine and back',
-  ),
-  'Arms' => const _YoutubeDemo(
-    videoId: 'XMk3TtM6d2Y',
-    channel: 'FitnessBlender',
-    title: 'Arms and core strength finisher',
-  ),
-  'Stretching' => const _YoutubeDemo(
-    videoId: 'P8DOZRtIIEQ',
-    channel: 'FitnessBlender',
-    title: 'Relaxing cool-down stretch',
-  ),
-  _ => const _YoutubeDemo(
-    videoId: 'G1RVPkcGuao',
-    channel: 'growingannanas',
-    title: 'Full body bodyweight workout',
-  ),
-};
-
-class _YoutubeDemoCard extends StatefulWidget {
-  const _YoutubeDemoCard({required this.workout});
-
-  final Workout workout;
-
-  @override
-  State<_YoutubeDemoCard> createState() => _YoutubeDemoCardState();
-}
-
-class _YoutubeDemoCardState extends State<_YoutubeDemoCard> {
-  late final _YoutubeDemo _demo;
-  late final YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _demo = _youtubeDemoFor(widget.workout);
-    _controller = YoutubePlayerController.fromVideoId(
-      videoId: _demo.videoId,
-      autoPlay: false,
-      params: const YoutubePlayerParams(
-        showControls: true,
-        showFullscreenButton: true,
-        privacyEnhancedMode: true,
-        strictRelatedVideos: true,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Container(
-    clipBehavior: Clip.antiAlias,
-    decoration: BoxDecoration(
-      color: _elevated(context),
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: _pageBorder(context)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 13, 10, 10),
-          child: Row(
-            children: [
-              const Icon(Icons.play_circle_fill_rounded, color: Color(0xFFFF0000)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'VIDEO DEMO',
-                      style: TextStyle(
-                        color: _sectionLabel(context),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    Text(
-                      _demo.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.archivo(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: 'Open on YouTube',
-                onPressed: () => _openYoutubeSource(context, _demo.videoId),
-                icon: const Icon(Icons.open_in_new_rounded, size: 19),
-              ),
-            ],
-          ),
-        ),
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: YoutubePlayer(controller: _controller),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 9, 14, 12),
-          child: Text(
-            'Source: ${_demo.channel} on YouTube',
-            style: TextStyle(color: _muted(context), fontSize: 11),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Future<void> _openYoutubeSource(BuildContext context, String videoId) async {
-  final uri = Uri.https('www.youtube.com', '/watch', {'v': videoId});
-  try {
-    if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
-  } catch (_) {
-    // The embedded player remains available if YouTube cannot open externally.
-  }
-  if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('YouTube could not be opened on this device.')),
-  );
 }
 
 class _SpotifyPlaylistCard extends StatelessWidget {
