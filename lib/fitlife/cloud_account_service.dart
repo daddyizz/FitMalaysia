@@ -26,10 +26,13 @@ class CloudAccountService extends ChangeNotifier {
   CloudAccountService._();
 
   static final instance = CloudAccountService._();
+  static const adminEmail = 'dady.izz85@gmail.com';
 
   FirebaseAuth? _auth;
   FirebaseFirestore? _firestore;
   StreamSubscription<User?>? _authSubscription;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
+  _partnerOfferSubscription;
   FitLifeStore? _store;
   Timer? _syncTimer;
   bool _pendingBackupChoice = false;
@@ -42,6 +45,8 @@ class CloudAccountService extends ChangeNotifier {
 
   User? get user => _auth?.currentUser;
   bool get signedIn => user != null;
+  bool get isPartnerOfferAdmin =>
+      user?.email?.trim().toLowerCase() == adminEmail;
 
   Future<void> initialize() async {
     if (initialized) return;
@@ -59,6 +64,7 @@ class CloudAccountService extends ChangeNotifier {
       _authSubscription = _auth!.authStateChanges().listen((_) {
         notifyListeners();
       });
+      _watchGlobalPartnerOffer();
       available = true;
     } catch (error) {
       lastError = _friendlyError(error);
@@ -174,6 +180,49 @@ class CloudAccountService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateGlobalPartnerOffer({
+    required String url,
+    required bool enabled,
+  }) async {
+    if (!isPartnerOfferAdmin || _firestore == null) {
+      throw StateError('Sign in with the administrator account to edit offers.');
+    }
+    final trimmedUrl = url.trim();
+    if (trimmedUrl.isEmpty || Uri.tryParse(trimmedUrl)?.hasScheme != true) {
+      throw StateError('Enter a valid https:// link.');
+    }
+    await _firestore!.collection('app_config').doc('partner_offer').set({
+      'url': trimmedUrl,
+      'enabled': enabled,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'updatedBy': user?.email,
+    });
+    _store?.updatePartnerOffer(url: trimmedUrl, enabled: enabled);
+  }
+
+  void _watchGlobalPartnerOffer() {
+    final firestore = _firestore;
+    if (firestore == null) return;
+    _partnerOfferSubscription?.cancel();
+    _partnerOfferSubscription = firestore
+        .collection('app_config')
+        .doc('partner_offer')
+        .snapshots()
+        .listen(
+          (document) {
+            final data = document.data();
+            final url = data?['url'];
+            final enabled = data?['enabled'];
+            if (url is String && url.trim().isNotEmpty && enabled is bool) {
+              _store?.updatePartnerOffer(url: url, enabled: enabled);
+            }
+          },
+          onError: (_) {
+            // Global offers remain optional. Local defaults continue offline.
+          },
+        );
+  }
+
   Future<void> deleteAccountAndCloudData() async {
     final currentUser = user;
     if (currentUser == null) return;
@@ -244,6 +293,7 @@ class CloudAccountService extends ChangeNotifier {
   void dispose() {
     _syncTimer?.cancel();
     _authSubscription?.cancel();
+    _partnerOfferSubscription?.cancel();
     _store?.removeListener(_onStoreChanged);
     super.dispose();
   }

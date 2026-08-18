@@ -926,6 +926,7 @@ class _FitLifeShellState extends State<FitLifeShell> {
   void initState() {
     super.initState();
     _partnerOfferScheduleTick.addListener(_schedulePartnerOffer);
+    context.read<FitLifeStore>().addListener(_schedulePartnerOffer);
     _schedulePartnerOffer();
   }
 
@@ -933,6 +934,7 @@ class _FitLifeShellState extends State<FitLifeShell> {
   void dispose() {
     _partnerOfferTimer?.cancel();
     _partnerOfferScheduleTick.removeListener(_schedulePartnerOffer);
+    context.read<FitLifeStore>().removeListener(_schedulePartnerOffer);
     super.dispose();
   }
 
@@ -6101,7 +6103,7 @@ class _AdminPageState extends State<AdminPage> {
     super.dispose();
   }
 
-  void _saveOffer() {
+  Future<void> _saveOffer() async {
     final url = _offerUrl.text.trim();
     final isValid = Uri.tryParse(url)?.hasScheme ?? false;
     if (!isValid) {
@@ -6110,16 +6112,29 @@ class _AdminPageState extends State<AdminPage> {
       );
       return;
     }
-    context.read<FitLifeStore>().updatePartnerOffer(url: url);
-    _partnerOfferScheduleTick.value++;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Partner offer link saved.')));
+    try {
+      final store = context.read<FitLifeStore>();
+      await context.read<CloudAccountService>().updateGlobalPartnerOffer(
+        url: url,
+        enabled: store.partnerOfferEnabled,
+      );
+      if (!mounted) return;
+      _partnerOfferScheduleTick.value++;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Global partner offer saved.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Bad state: ', ''))),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
+    final account = context.watch<CloudAccountService>();
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
@@ -6133,6 +6148,17 @@ class _AdminPageState extends State<AdminPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (!account.isPartnerOfferAdmin)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Admin access is restricted. Sign in with the authorized Google account to manage global offers.',
+                    style: TextStyle(color: _muted(context)),
+                  ),
+                ),
+              )
+            else
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -6148,7 +6174,7 @@ class _AdminPageState extends State<AdminPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Shows an optional offer 15 seconds after the app opens, then at most once every 15 minutes. It never opens automatically.',
+                      'Changes here are global. The optional offer appears 15 seconds after app launch, then at most once every 15 minutes. It never opens automatically.',
                       style: TextStyle(color: _muted(context), fontSize: 12),
                     ),
                     const SizedBox(height: 14),
@@ -6157,9 +6183,24 @@ class _AdminPageState extends State<AdminPage> {
                       title: const Text('Enable partner offer'),
                       value: store.partnerOfferEnabled,
                       activeThumbColor: scheme.primary,
-                      onChanged: (value) {
-                        store.updatePartnerOffer(enabled: value);
-                        _partnerOfferScheduleTick.value++;
+                      onChanged: (value) async {
+                        try {
+                          await account.updateGlobalPartnerOffer(
+                            url: _offerUrl.text,
+                            enabled: value,
+                          );
+                          if (!context.mounted) return;
+                          _partnerOfferScheduleTick.value++;
+                        } catch (error) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                error.toString().replaceFirst('Bad state: ', ''),
+                              ),
+                            ),
+                          );
+                        }
                       },
                     ),
                     const SizedBox(height: 8),
@@ -6194,20 +6235,22 @@ class _AdminPageState extends State<AdminPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () {
-                store.resetPartnerOfferCooldown();
-                _partnerOfferScheduleTick.value++;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Partner offer 15-minute cooldown reset.'),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.timer_off_outlined),
-              label: const Text('RESET 15-MINUTE COOLDOWN'),
-            ),
+            if (account.isPartnerOfferAdmin) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  store.resetPartnerOfferCooldown();
+                  _partnerOfferScheduleTick.value++;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Partner offer 15-minute cooldown reset.'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.timer_off_outlined),
+                label: const Text('RESET 15-MINUTE COOLDOWN'),
+              ),
+            ],
           ],
         ),
       ),
