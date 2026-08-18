@@ -4144,7 +4144,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final store = context.watch<FitLifeStore>();
     final account = context.watch<CloudAccountService>();
     final streak = _currentStreak(store.history);
-    final isDark = _isDark(context);
     return AppPage(
       title: 'Profile',
       subtitle: store.name.isEmpty ? 'Guest' : store.name,
@@ -4465,23 +4464,16 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 18),
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: isDark
-                          ? Colors.white
-                          : Theme.of(context).colorScheme.primary,
-                      foregroundColor: isDark ? Colors.black : Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
                       side: BorderSide.none,
                       elevation: 0,
                     ),
                     onPressed: store.restartPlan,
-                    icon: Icon(
-                      Icons.restart_alt,
-                      shadows: isDark ? null : const [_buttonTextLift],
-                    ),
+                    icon: Icon(Icons.restart_alt),
                     label: Text(
                       'RESTART 28-DAY PLAN',
-                      style: TextStyle(
-                        shadows: isDark ? null : const [_buttonTextLift],
-                      ),
+                      style: TextStyle(shadows: const [_buttonTextLift]),
                     ),
                   ),
                 ],
