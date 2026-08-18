@@ -25,7 +25,17 @@ class NotificationService {
     tz.initializeTimeZones();
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       final zone = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(zone.identifier));
+      try {
+        tz.setLocalLocation(tz.getLocation(zone.identifier));
+      } catch (_) {
+        // Some Android vendors return Asia/Kuala_Lumpur while their bundled
+        // timezone database omits that alias. Malaysia shares Singapore time.
+        try {
+          tz.setLocalLocation(tz.getLocation('Asia/Singapore'));
+        } catch (_) {
+          // UTC remains the safe final fallback; reminders can still be set.
+        }
+      }
     }
     await _notifications.initialize(
       settings: const InitializationSettings(
