@@ -20,6 +20,7 @@ class AchievementNotice {
 
 class FitLifeStore extends ChangeNotifier {
   static const _key = 'fitlife_offline_state_v1';
+  static const defaultPartnerOfferUrl = 'https://s.shopee.com.my/8pl4jGugUX';
   SharedPreferences? _preferences;
   bool _restoring = false;
 
@@ -43,6 +44,9 @@ class FitLifeStore extends ChangeNotifier {
   bool workoutReminders = false;
   int workoutReminderHour = 19;
   int workoutReminderMinute = 0;
+  String partnerOfferUrl = defaultPartnerOfferUrl;
+  bool partnerOfferEnabled = true;
+  DateTime? partnerOfferLastShownAt;
   bool healthConnectEnabled = false;
   int healthStepsToday = 0;
   String? healthStepsDateKey;
@@ -114,6 +118,12 @@ class FitLifeStore extends ChangeNotifier {
       workoutReminders = data['workoutReminders'] as bool? ?? false;
       workoutReminderHour = data['workoutReminderHour'] as int? ?? 19;
       workoutReminderMinute = data['workoutReminderMinute'] as int? ?? 0;
+      partnerOfferUrl =
+          data['partnerOfferUrl'] as String? ?? defaultPartnerOfferUrl;
+      partnerOfferEnabled = data['partnerOfferEnabled'] as bool? ?? true;
+      partnerOfferLastShownAt = DateTime.tryParse(
+        data['partnerOfferLastShownAt'] as String? ?? '',
+      );
       healthConnectEnabled = data['healthConnectEnabled'] as bool? ?? false;
       healthStepsToday = data['healthStepsToday'] as int? ?? 0;
       healthStepsDateKey = data['healthStepsDateKey'] as String?;
@@ -207,6 +217,9 @@ class FitLifeStore extends ChangeNotifier {
     'workoutReminders': workoutReminders,
     'workoutReminderHour': workoutReminderHour,
     'workoutReminderMinute': workoutReminderMinute,
+    'partnerOfferUrl': partnerOfferUrl,
+    'partnerOfferEnabled': partnerOfferEnabled,
+    'partnerOfferLastShownAt': partnerOfferLastShownAt?.toIso8601String(),
     'healthConnectEnabled': healthConnectEnabled,
     'healthStepsToday': healthStepsToday,
     'healthStepsDateKey': healthStepsDateKey,
@@ -285,7 +298,8 @@ class FitLifeStore extends ChangeNotifier {
     } else {
       waterByDate[todayKey] = next;
     }
-    final goalReached = previous < waterTarget &&
+    final goalReached =
+        previous < waterTarget &&
         next >= waterTarget &&
         waterGoalRewardedDates.add(todayKey);
     if (goalReached) {
@@ -345,6 +359,29 @@ class FitLifeStore extends ChangeNotifier {
   void setWorkoutReminderTime(int hour, int minute) {
     workoutReminderHour = hour;
     workoutReminderMinute = minute;
+    _changed();
+  }
+
+  bool get canShowPartnerOffer {
+    if (!partnerOfferEnabled || partnerOfferUrl.trim().isEmpty) return false;
+    final lastShown = partnerOfferLastShownAt;
+    return lastShown == null ||
+        DateTime.now().difference(lastShown) >= const Duration(minutes: 30);
+  }
+
+  void markPartnerOfferShown() {
+    partnerOfferLastShownAt = DateTime.now();
+    _changed();
+  }
+
+  void updatePartnerOffer({String? url, bool? enabled}) {
+    if (url != null) partnerOfferUrl = url.trim();
+    if (enabled != null) partnerOfferEnabled = enabled;
+    _changed();
+  }
+
+  void resetPartnerOfferCooldown() {
+    partnerOfferLastShownAt = null;
     _changed();
   }
 
@@ -440,6 +477,9 @@ class FitLifeStore extends ChangeNotifier {
     workoutReminders = false;
     workoutReminderHour = 19;
     workoutReminderMinute = 0;
+    partnerOfferUrl = defaultPartnerOfferUrl;
+    partnerOfferEnabled = true;
+    partnerOfferLastShownAt = null;
     healthConnectEnabled = false;
     healthStepsToday = 0;
     healthStepsDateKey = null;

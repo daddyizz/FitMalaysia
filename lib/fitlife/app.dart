@@ -66,6 +66,22 @@ void _syncGoogleDisplayName(FitLifeStore store, String? rawGoogleName) {
   store.updateProfile(profileName: googleName);
 }
 
+Future<void> _openPartnerOffer(BuildContext context, String rawUrl) async {
+  final uri = Uri.tryParse(rawUrl.trim());
+  if (uri == null || !uri.hasScheme) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Partner offer link is not valid.')),
+    );
+    return;
+  }
+  if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
+      context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not open the partner offer.')),
+    );
+  }
+}
+
 class FitLifeApp extends StatelessWidget {
   const FitLifeApp({super.key});
 
@@ -3201,10 +3217,10 @@ class _ProgressBodyState extends State<_ProgressBody> {
                       }
                     },
                     style: FilledButton.styleFrom(
-                      backgroundColor: _elevated(context),
-                      foregroundColor: Theme.of(
-                        context,
-                      ).colorScheme.onSecondary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: _isDark(context)
+                          ? Colors.black
+                          : Colors.white,
                     ),
                     child: const Text('SAVE TO PROFILE'),
                   ),
@@ -3997,6 +4013,8 @@ class NutritionDetailPage extends StatelessWidget {
                 items: article.benefits,
               ),
               const SizedBox(height: 12),
+              const FeedAdBanner(),
+              const SizedBox(height: 10),
               _NutritionSection(title: 'Good Sources', items: article.examples),
               const SizedBox(height: 12),
               _NutritionSection(title: 'Practical Tips', items: article.tips),
@@ -4083,14 +4101,50 @@ class _NutritionSection extends StatelessWidget {
   );
 }
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  Timer? _settingsTapTimer;
+  int _settingsTapCount = 0;
+
+  @override
+  void dispose() {
+    _settingsTapTimer?.cancel();
+    super.dispose();
+  }
+
+  void _openSettingsOrAdmin() {
+    _settingsTapCount++;
+    _settingsTapTimer?.cancel();
+    if (_settingsTapCount >= 8) {
+      _settingsTapCount = 0;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminPage()),
+      );
+      return;
+    }
+    _settingsTapTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      _settingsTapCount = 0;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SettingsPage()),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
     final account = context.watch<CloudAccountService>();
     final streak = _currentStreak(store.history);
+    final isDark = _isDark(context);
     return AppPage(
       title: 'Profile',
       subtitle: store.name.isEmpty ? 'Guest' : store.name,
@@ -4103,10 +4157,7 @@ class ProfilePage extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           child: IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
+            onPressed: _openSettingsOrAdmin,
             icon: const Icon(Icons.settings_outlined),
           ),
         ),
@@ -4414,24 +4465,22 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 18),
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: isDark
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.primary,
+                      foregroundColor: isDark ? Colors.black : Colors.white,
                       side: BorderSide.none,
                       elevation: 0,
                     ),
                     onPressed: store.restartPlan,
                     icon: Icon(
                       Icons.restart_alt,
-                      shadows: _isDark(context)
-                          ? null
-                          : const [_buttonTextLift],
+                      shadows: isDark ? null : const [_buttonTextLift],
                     ),
                     label: Text(
                       'RESTART 28-DAY PLAN',
                       style: TextStyle(
-                        shadows: _isDark(context)
-                            ? null
-                            : const [_buttonTextLift],
+                        shadows: isDark ? null : const [_buttonTextLift],
                       ),
                     ),
                   ),
@@ -4525,9 +4574,10 @@ class _ProfileAvatar extends StatelessWidget {
             child: usesGooglePhoto
                 ? Image.network(
                     photoUrl,
-                    width: 64,
-                    height: 64,
+                    width: 82,
+                    height: 82,
                     fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
                     errorBuilder: (_, _, _) =>
                         Text(_emoji, style: const TextStyle(fontSize: 31)),
                   )
@@ -5187,8 +5237,25 @@ class SettingsPage extends StatelessWidget {
                                   onPressed: account.busy
                                       ? null
                                       : () => _syncCloudBackup(context),
-                                  icon: const Icon(Icons.sync),
-                                  label: const Text('SYNC NOW'),
+                                  style: FilledButton.styleFrom(
+                                    foregroundColor: isDark
+                                        ? Colors.black
+                                        : Colors.white,
+                                  ),
+                                  icon: Icon(
+                                    Icons.sync,
+                                    shadows: isDark
+                                        ? null
+                                        : const [_buttonTextLift],
+                                  ),
+                                  label: Text(
+                                    'SYNC NOW',
+                                    style: TextStyle(
+                                      shadows: isDark
+                                          ? null
+                                          : const [_buttonTextLift],
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -5244,54 +5311,16 @@ class SettingsPage extends StatelessWidget {
                           label: 'Water Reminders',
                           description: 'Nudge yourself to keep hydrated',
                           value: store.waterReminders,
-                          onChanged: (value) async {
-                            if (value &&
-                                !await NotificationService.instance
-                                    .requestPermission()) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Notification permission was not granted.',
-                                    ),
-                                  ),
-                                );
-                              }
-                              return;
-                            }
-                            store.updatePreferences(water: value);
-                            await NotificationService.instance.scheduleWater(
-                              enabled: value,
-                            );
-                          },
+                          onChanged: (value) =>
+                              _setWaterReminders(context, store, value),
                         ),
                         Divider(height: 1, color: _pageBorder(context)),
                         _SettingToggle(
                           label: 'Workout Reminders',
                           description: 'Daily prompt to keep your streak alive',
                           value: store.workoutReminders,
-                          onChanged: (value) async {
-                            if (value &&
-                                !await NotificationService.instance
-                                    .requestPermission()) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Notification permission was not granted.',
-                                    ),
-                                  ),
-                                );
-                              }
-                              return;
-                            }
-                            store.updatePreferences(workout: value);
-                            await NotificationService.instance.scheduleWorkout(
-                              enabled: value,
-                              hour: store.workoutReminderHour,
-                              minute: store.workoutReminderMinute,
-                            );
-                          },
+                          onChanged: (value) =>
+                              _setWorkoutReminders(context, store, value),
                         ),
                         if (store.workoutReminders)
                           ListTile(
@@ -5386,15 +5415,28 @@ class SettingsPage extends StatelessWidget {
                                   store,
                                   connect: !store.healthConnectEnabled,
                                 ),
+                                style: FilledButton.styleFrom(
+                                  foregroundColor: isDark
+                                      ? Colors.black
+                                      : Colors.white,
+                                ),
                                 icon: Icon(
                                   store.healthConnectEnabled
                                       ? Icons.sync
                                       : Icons.link,
+                                  shadows: isDark
+                                      ? null
+                                      : const [_buttonTextLift],
                                 ),
                                 label: Text(
                                   store.healthConnectEnabled
                                       ? 'SYNC NOW'
                                       : 'CONNECT',
+                                  style: TextStyle(
+                                    shadows: isDark
+                                        ? null
+                                        : const [_buttonTextLift],
+                                  ),
                                 ),
                               ),
                             ),
@@ -5598,6 +5640,88 @@ class SettingsPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _setWaterReminders(
+    BuildContext context,
+    FitLifeStore store,
+    bool enabled,
+  ) async {
+    try {
+      if (enabled && !await NotificationService.instance.requestPermission()) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Allow notifications to turn on water reminders.'),
+            ),
+          );
+        }
+        return;
+      }
+      await NotificationService.instance.scheduleWater(enabled: enabled);
+      store.updatePreferences(water: enabled);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              enabled
+                  ? 'Water reminders set for 9 AM, 12 PM, 3 PM and 6 PM.'
+                  : 'Water reminders turned off.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Water reminders could not be set.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _setWorkoutReminders(
+    BuildContext context,
+    FitLifeStore store,
+    bool enabled,
+  ) async {
+    try {
+      if (enabled && !await NotificationService.instance.requestPermission()) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Allow notifications to turn on workout reminders.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      await NotificationService.instance.scheduleWorkout(
+        enabled: enabled,
+        hour: store.workoutReminderHour,
+        minute: store.workoutReminderMinute,
+      );
+      store.updatePreferences(workout: enabled);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              enabled
+                  ? 'Workout reminder set for ${TimeOfDay(hour: store.workoutReminderHour, minute: store.workoutReminderMinute).format(context)}.'
+                  : 'Workout reminders turned off.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Workout reminder could not be set.')),
+        );
+      }
+    }
   }
 
   Future<void> _signInAndResolveBackup(BuildContext context) async {
@@ -5860,6 +5984,140 @@ class SettingsPage extends StatelessWidget {
         context,
       ).showSnackBar(const SnackBar(content: Text('Progress reset')));
     }
+  }
+}
+
+class AdminPage extends StatefulWidget {
+  const AdminPage({super.key});
+
+  @override
+  State<AdminPage> createState() => _AdminPageState();
+}
+
+class _AdminPageState extends State<AdminPage> {
+  late final TextEditingController _offerUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _offerUrl = TextEditingController(
+      text: context.read<FitLifeStore>().partnerOfferUrl,
+    );
+  }
+
+  @override
+  void dispose() {
+    _offerUrl.dispose();
+    super.dispose();
+  }
+
+  void _saveOffer() {
+    final url = _offerUrl.text.trim();
+    final isValid = Uri.tryParse(url)?.hasScheme ?? false;
+    if (!isValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid https:// link.')),
+      );
+      return;
+    }
+    context.read<FitLifeStore>().updatePartnerOffer(url: url);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Partner offer link saved.')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<FitLifeStore>();
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'ADMIN TOOLS',
+          style: GoogleFonts.archivo(fontWeight: FontWeight.w900),
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Partner Offer',
+                      style: GoogleFonts.archivo(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Shows an optional “View offer” action after a workout starts. It never opens automatically and appears at most once every 30 minutes.',
+                      style: TextStyle(color: _muted(context), fontSize: 12),
+                    ),
+                    const SizedBox(height: 14),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Enable partner offer'),
+                      value: store.partnerOfferEnabled,
+                      activeThumbColor: scheme.primary,
+                      onChanged: (value) =>
+                          store.updatePartnerOffer(enabled: value),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _offerUrl,
+                      keyboardType: TextInputType.url,
+                      decoration: const InputDecoration(
+                        labelText: 'Partner offer link',
+                        hintText: 'https://...',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: _saveOffer,
+                            icon: const Icon(Icons.save_outlined),
+                            label: const Text('SAVE LINK'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              _openPartnerOffer(context, _offerUrl.text),
+                          icon: const Icon(Icons.open_in_new),
+                          label: const Text('TEST'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                store.resetPartnerOfferCooldown();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Partner offer cooldown reset.'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.timer_off_outlined),
+              label: const Text('RESET 30-MINUTE COOLDOWN'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -6139,6 +6397,21 @@ class WorkoutDetailPage extends StatelessWidget {
   const WorkoutDetailPage({super.key, required this.workout});
   final Workout workout;
 
+  void _startWorkout(BuildContext context) {
+    final store = context.read<FitLifeStore>();
+    final showPartnerOffer = store.canShowPartnerOffer;
+    if (showPartnerOffer) store.markPartnerOfferShown();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WorkoutSessionPage(
+          workout: workout,
+          showPartnerOffer: showPartnerOffer,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
@@ -6404,12 +6677,7 @@ class WorkoutDetailPage extends StatelessWidget {
                           ? Colors.black
                           : Colors.white,
                     ),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => WorkoutSessionPage(workout: workout),
-                      ),
-                    ),
+                    onPressed: () => _startWorkout(context),
                     icon: Icon(
                       Icons.fitness_center,
                       shadows: _isDark(context)
@@ -6646,8 +6914,13 @@ class _DetailStat extends StatelessWidget {
 }
 
 class WorkoutSessionPage extends StatefulWidget {
-  const WorkoutSessionPage({super.key, required this.workout});
+  const WorkoutSessionPage({
+    super.key,
+    required this.workout,
+    this.showPartnerOffer = false,
+  });
   final Workout workout;
+  final bool showPartnerOffer;
   @override
   State<WorkoutSessionPage> createState() => _WorkoutSessionPageState();
 }
@@ -6667,6 +6940,22 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!paused) nextSecond();
     });
+    if (widget.showPartnerOffer) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final offerUrl = context.read<FitLifeStore>().partnerOfferUrl;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 12),
+            content: const Text('Optional partner offer available.'),
+            action: SnackBarAction(
+              label: 'VIEW OFFER',
+              onPressed: () => _openPartnerOffer(context, offerUrl),
+            ),
+          ),
+        );
+      });
+    }
   }
 
   void nextSecond() {
