@@ -5759,7 +5759,8 @@ class SettingsPage extends StatelessWidget {
           ),
         );
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Water reminder scheduling failed: $error\n$stackTrace');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Water reminders could not be set.')),
@@ -5803,7 +5804,8 @@ class SettingsPage extends StatelessWidget {
           ),
         );
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Workout reminder scheduling failed: $error\n$stackTrace');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Workout reminder could not be set.')),
