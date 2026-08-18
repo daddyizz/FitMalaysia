@@ -34,6 +34,7 @@ final _shellNavigation = ValueNotifier<int>(0);
 final _waterToastVisible = ValueNotifier<bool>(false);
 final _achievementToast = ValueNotifier<AchievementNotice?>(null);
 final _celebrationToken = ValueNotifier<int?>(null);
+final _partnerOfferScheduleTick = ValueNotifier<int>(0);
 Timer? _waterToastTimer;
 Timer? _achievementToastTimer;
 Timer? _celebrationTimer;
@@ -919,6 +920,101 @@ class _FitLifeShellState extends State<FitLifeShell> {
     NutritionPage(),
     ProfilePage(),
   ];
+  Timer? _partnerOfferTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _partnerOfferScheduleTick.addListener(_schedulePartnerOffer);
+    _schedulePartnerOffer();
+  }
+
+  @override
+  void dispose() {
+    _partnerOfferTimer?.cancel();
+    _partnerOfferScheduleTick.removeListener(_schedulePartnerOffer);
+    super.dispose();
+  }
+
+  void _schedulePartnerOffer({Duration? delay}) {
+    _partnerOfferTimer?.cancel();
+    final store = context.read<FitLifeStore>();
+    if (!store.partnerOfferEnabled || store.partnerOfferUrl.trim().isEmpty) {
+      return;
+    }
+    final lastShown = store.partnerOfferLastShownAt;
+    final wait =
+        delay ??
+        (lastShown == null
+            ? const Duration(seconds: 15)
+            : Duration(minutes: 15) - DateTime.now().difference(lastShown));
+    _partnerOfferTimer = Timer(
+      wait <= Duration.zero ? const Duration(seconds: 15) : wait,
+      _showPartnerOffer,
+    );
+  }
+
+  void _showPartnerOffer() {
+    if (!mounted) return;
+    final store = context.read<FitLifeStore>();
+    if (!store.canShowPartnerOffer) {
+      _schedulePartnerOffer();
+      return;
+    }
+    store.markPartnerOfferShown();
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'PARTNER OFFER',
+                style: GoogleFonts.archivo(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                'A special offer is available from one of our partners. Opening it is completely optional.',
+                style: TextStyle(color: _muted(sheetContext), height: 1.35),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      child: const Text('NOT NOW'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                        _openPartnerOffer(context, store.partnerOfferUrl);
+                      },
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('VIEW OFFER'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).whenComplete(
+      () => _schedulePartnerOffer(delay: const Duration(minutes: 15)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<int>(
@@ -4465,7 +4561,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Colors.black,
                       side: BorderSide.none,
                       elevation: 0,
                     ),
@@ -4473,7 +4569,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     icon: Icon(Icons.restart_alt),
                     label: Text(
                       'RESTART 28-DAY PLAN',
-                      style: TextStyle(shadows: const [_buttonTextLift]),
+                      style: const TextStyle(color: Colors.black),
                     ),
                   ),
                 ],
@@ -6013,6 +6109,7 @@ class _AdminPageState extends State<AdminPage> {
       return;
     }
     context.read<FitLifeStore>().updatePartnerOffer(url: url);
+    _partnerOfferScheduleTick.value++;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Partner offer link saved.')));
@@ -6049,7 +6146,7 @@ class _AdminPageState extends State<AdminPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Shows an optional “View offer” action after a workout starts. It never opens automatically and appears at most once every 30 minutes.',
+                      'Shows an optional offer 15 seconds after the app opens, then at most once every 15 minutes. It never opens automatically.',
                       style: TextStyle(color: _muted(context), fontSize: 12),
                     ),
                     const SizedBox(height: 14),
@@ -6058,8 +6155,10 @@ class _AdminPageState extends State<AdminPage> {
                       title: const Text('Enable partner offer'),
                       value: store.partnerOfferEnabled,
                       activeThumbColor: scheme.primary,
-                      onChanged: (value) =>
-                          store.updatePartnerOffer(enabled: value),
+                      onChanged: (value) {
+                        store.updatePartnerOffer(enabled: value);
+                        _partnerOfferScheduleTick.value++;
+                      },
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -6097,14 +6196,15 @@ class _AdminPageState extends State<AdminPage> {
             OutlinedButton.icon(
               onPressed: () {
                 store.resetPartnerOfferCooldown();
+                _partnerOfferScheduleTick.value++;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Partner offer cooldown reset.'),
+                    content: Text('Partner offer 15-minute cooldown reset.'),
                   ),
                 );
               },
               icon: const Icon(Icons.timer_off_outlined),
-              label: const Text('RESET 30-MINUTE COOLDOWN'),
+              label: const Text('RESET 15-MINUTE COOLDOWN'),
             ),
           ],
         ),
@@ -6390,17 +6490,9 @@ class WorkoutDetailPage extends StatelessWidget {
   final Workout workout;
 
   void _startWorkout(BuildContext context) {
-    final store = context.read<FitLifeStore>();
-    final showPartnerOffer = store.canShowPartnerOffer;
-    if (showPartnerOffer) store.markPartnerOfferShown();
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => WorkoutSessionPage(
-          workout: workout,
-          showPartnerOffer: showPartnerOffer,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => WorkoutSessionPage(workout: workout)),
     );
   }
 
@@ -6906,13 +6998,8 @@ class _DetailStat extends StatelessWidget {
 }
 
 class WorkoutSessionPage extends StatefulWidget {
-  const WorkoutSessionPage({
-    super.key,
-    required this.workout,
-    this.showPartnerOffer = false,
-  });
+  const WorkoutSessionPage({super.key, required this.workout});
   final Workout workout;
-  final bool showPartnerOffer;
   @override
   State<WorkoutSessionPage> createState() => _WorkoutSessionPageState();
 }
@@ -6932,22 +7019,6 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!paused) nextSecond();
     });
-    if (widget.showPartnerOffer) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final offerUrl = context.read<FitLifeStore>().partnerOfferUrl;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: const Duration(seconds: 12),
-            content: const Text('Optional partner offer available.'),
-            action: SnackBarAction(
-              label: 'VIEW OFFER',
-              onPressed: () => _openPartnerOffer(context, offerUrl),
-            ),
-          ),
-        );
-      });
-    }
   }
 
   void nextSecond() {

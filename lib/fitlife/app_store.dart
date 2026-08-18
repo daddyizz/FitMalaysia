@@ -366,7 +366,7 @@ class FitLifeStore extends ChangeNotifier {
     if (!partnerOfferEnabled || partnerOfferUrl.trim().isEmpty) return false;
     final lastShown = partnerOfferLastShownAt;
     return lastShown == null ||
-        DateTime.now().difference(lastShown) >= const Duration(minutes: 30);
+        DateTime.now().difference(lastShown) >= const Duration(minutes: 15);
   }
 
   void markPartnerOfferShown() {
