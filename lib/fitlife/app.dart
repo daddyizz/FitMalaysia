@@ -17,6 +17,7 @@ import 'models.dart';
 import 'notification_service.dart';
 import 'plan_service.dart';
 import 'privacy_consent.dart';
+import 'workout_interstitial_ad.dart';
 
 const _green = Color(0xFF138A5B);
 // Keeps the last card comfortably clear of the floating navigation bar,
@@ -7303,6 +7304,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
   @override
   void initState() {
     super.initState();
+    unawaited(WorkoutInterstitialAd.instance.preload());
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!paused) nextSecond();
     });
@@ -7359,7 +7361,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
     }
   }
 
-  void _finishWorkout() {
+  Future<void> _finishWorkout() async {
     if (_completed) return;
     _completed = true;
     timer?.cancel();
@@ -7380,6 +7382,13 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
         ),
       );
     }
+    final shouldShowInterstitial =
+        store.registerWorkoutCompletionForInterstitial();
+    if (shouldShowInterstitial) {
+      final wasShown = await WorkoutInterstitialAd.instance.showIfReady();
+      if (wasShown) store.markWorkoutInterstitialShown();
+    }
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => WorkoutCompletePage(

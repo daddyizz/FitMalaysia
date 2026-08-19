@@ -51,6 +51,8 @@ class FitLifeStore extends ChangeNotifier {
   int partnerOfferLaunchDelaySeconds = 15;
   int partnerOfferNotNowCooldownMinutes = 15;
   int partnerOfferViewedCooldownHours = 24;
+  int completedWorkoutsSinceInterstitial = 0;
+  DateTime? workoutInterstitialLastShownAt;
   bool healthConnectEnabled = false;
   int healthStepsToday = 0;
   String? healthStepsDateKey;
@@ -137,6 +139,11 @@ class FitLifeStore extends ChangeNotifier {
           data['partnerOfferNotNowCooldownMinutes'] as int? ?? 15;
       partnerOfferViewedCooldownHours =
           data['partnerOfferViewedCooldownHours'] as int? ?? 24;
+      completedWorkoutsSinceInterstitial =
+          data['completedWorkoutsSinceInterstitial'] as int? ?? 0;
+      workoutInterstitialLastShownAt = DateTime.tryParse(
+        data['workoutInterstitialLastShownAt'] as String? ?? '',
+      );
       healthConnectEnabled = data['healthConnectEnabled'] as bool? ?? false;
       healthStepsToday = data['healthStepsToday'] as int? ?? 0;
       healthStepsDateKey = data['healthStepsDateKey'] as String?;
@@ -237,6 +244,9 @@ class FitLifeStore extends ChangeNotifier {
     'partnerOfferLaunchDelaySeconds': partnerOfferLaunchDelaySeconds,
     'partnerOfferNotNowCooldownMinutes': partnerOfferNotNowCooldownMinutes,
     'partnerOfferViewedCooldownHours': partnerOfferViewedCooldownHours,
+    'completedWorkoutsSinceInterstitial': completedWorkoutsSinceInterstitial,
+    'workoutInterstitialLastShownAt': workoutInterstitialLastShownAt
+        ?.toIso8601String(),
     'healthConnectEnabled': healthConnectEnabled,
     'healthStepsToday': healthStepsToday,
     'healthStepsDateKey': healthStepsDateKey,
@@ -346,6 +356,25 @@ class FitLifeStore extends ChangeNotifier {
     final achievement = _newWorkoutAchievement();
     _changed();
     return achievement;
+  }
+
+  /// An interstitial can be attempted only after at least two completed
+  /// workouts and a 20-minute break since the last full-screen ad.
+  bool registerWorkoutCompletionForInterstitial() {
+    completedWorkoutsSinceInterstitial++;
+    final lastShownAt = workoutInterstitialLastShownAt;
+    final hasEnoughCompletedWorkouts = completedWorkoutsSinceInterstitial >= 2;
+    final hasEnoughTime =
+        lastShownAt == null ||
+        DateTime.now().difference(lastShownAt) >= const Duration(minutes: 20);
+    _changed();
+    return hasEnoughCompletedWorkouts && hasEnoughTime;
+  }
+
+  void markWorkoutInterstitialShown() {
+    completedWorkoutsSinceInterstitial = 0;
+    workoutInterstitialLastShownAt = DateTime.now();
+    _changed();
   }
 
   void setDarkMode(bool value) {
