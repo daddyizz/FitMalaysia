@@ -6667,7 +6667,7 @@ class _AppSwitch extends StatelessWidget {
           boxShadow: !isDark && value
               ? const [
                   BoxShadow(
-                    color: Color(0x1F152015),
+                    color: Color(0x73152015),
                     blurRadius: 2,
                     offset: Offset(0, 1),
                   ),
