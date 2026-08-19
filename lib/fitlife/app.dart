@@ -6664,11 +6664,15 @@ class _AppSwitch extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFF3D4740)
-                : const Color(0xFF66736B),
-          ),
+          boxShadow: !isDark && value
+              ? const [
+                  BoxShadow(
+                    color: Color(0x1F152015),
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  ),
+                ]
+              : null,
         ),
         child: SwitchTheme(
           data: SwitchThemeData(
