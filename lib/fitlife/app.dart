@@ -1009,8 +1009,25 @@ class _FitLifeShellState extends State<FitLifeShell> {
                         Navigator.pop(sheetContext);
                         _openPartnerOffer(context, store.partnerOfferUrl);
                       },
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('VIEW OFFER'),
+                      style: FilledButton.styleFrom(
+                        foregroundColor: _isDark(context)
+                            ? Colors.black
+                            : Colors.white,
+                      ),
+                      icon: Icon(
+                        Icons.open_in_new,
+                        shadows: _isDark(context)
+                            ? null
+                            : const [_buttonTextLift],
+                      ),
+                      label: Text(
+                        'VIEW OFFER',
+                        style: TextStyle(
+                          shadows: _isDark(context)
+                              ? null
+                              : const [_buttonTextLift],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -2175,7 +2192,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
             shape: BoxShape.circle,
           ),
           child: IconButton(
-            color: _muted(context),
+            color: _isDark(context) ? Colors.white : _muted(context),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SavedWorkoutsPage()),
@@ -2548,12 +2565,10 @@ class _WorkoutPhotoCard extends StatelessWidget {
                               : const Color(0xCCFFFFFF),
                         ),
                       ),
-                      foregroundColor: isFavorite
-                          ? (_isDark(context)
-                                ? const Color(0xFFA7E33D)
-                                : const Color(0xFF182318))
-                          : (_isDark(context)
-                                ? Colors.white
+                      foregroundColor: _isDark(context)
+                          ? Colors.white
+                          : (isFavorite
+                                ? const Color(0xFF182318)
                                 : const Color(0xFF182318)),
                     ),
                     onPressed: () =>
@@ -3698,13 +3713,9 @@ class WorkoutFeatureCard extends StatelessWidget {
                     onPressed: () => store.toggleFavorite(workout.id),
                     icon: Icon(
                       isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite
-                          ? (_isDark(context)
-                                ? const Color(0xFFA7E33D)
-                                : const Color(0xFF182318))
-                          : (_isDark(context)
-                                ? Colors.white
-                                : const Color(0xFF182318)),
+                      color: _isDark(context)
+                          ? Colors.white
+                          : const Color(0xFF182318),
                     ),
                   ),
                 ),
@@ -3731,9 +3742,13 @@ class _Badge extends StatelessWidget {
             ? const Color(0xFFA7E33D)
             : (isDark ? Colors.black54 : const Color(0xB8E8ECE8)),
         borderRadius: radius,
-        border: green || isDark
+        border: green
             ? null
-            : Border.all(color: const Color(0xCCFFFFFF)),
+            : Border.all(
+                color: isDark
+                    ? const Color(0xFF3D4740)
+                    : const Color(0xCCFFFFFF),
+              ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -4595,15 +4610,28 @@ class _ProfilePageState extends State<ProfilePage> {
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.black,
+                      foregroundColor: _isDark(context)
+                          ? Colors.black
+                          : Colors.white,
                       side: BorderSide.none,
-                      elevation: 0,
+                      elevation: _isDark(context) ? 0 : 4,
+                      shadowColor: const Color(0x59152015),
                     ),
                     onPressed: store.restartPlan,
-                    icon: Icon(Icons.restart_alt),
+                    icon: Icon(
+                      Icons.restart_alt,
+                      shadows: _isDark(context)
+                          ? null
+                          : const [_buttonTextLift],
+                    ),
                     label: Text(
                       'RESTART 28-DAY PLAN',
-                      style: const TextStyle(color: Colors.black),
+                      style: TextStyle(
+                        color: _isDark(context) ? Colors.black : Colors.white,
+                        shadows: _isDark(context)
+                            ? null
+                            : const [_buttonTextLift],
+                      ),
                     ),
                   ),
                 ],
@@ -4694,14 +4722,15 @@ class _ProfileAvatar extends StatelessWidget {
               border: Border.all(color: borderColor, width: 1.5),
             ),
             child: usesGooglePhoto
-                ? Image.network(
-                    photoUrl,
-                    width: 82,
-                    height: 82,
-                    fit: BoxFit.cover,
-                    filterQuality: FilterQuality.high,
-                    errorBuilder: (_, _, _) =>
-                        Text(_emoji, style: const TextStyle(fontSize: 31)),
+                ? Transform.scale(
+                    scale: 1.1,
+                    child: Image.network(
+                      photoUrl,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (_, _, _) =>
+                          Text(_emoji, style: const TextStyle(fontSize: 31)),
+                    ),
                   )
                 : Text(_emoji, style: const TextStyle(fontSize: 31)),
           ),
@@ -6393,7 +6422,9 @@ class PrivacyPolicyPage extends StatelessWidget {
                     ),
                     child: IconButton(
                       onPressed: () => Navigator.pop(context),
-                      color: scheme.onSecondary,
+                      color: _isDark(context)
+                          ? Colors.white
+                          : scheme.onSecondary,
                       icon: const Icon(Icons.arrow_back),
                     ),
                   ),
@@ -6634,9 +6665,9 @@ class _AppSwitch extends StatelessWidget {
             ? null
             : const [
                 BoxShadow(
-                  color: Color(0x240C2413),
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
+                  color: Color(0x26152015),
+                  blurRadius: 2.5,
+                  offset: Offset(0, 1),
                 ),
               ],
       ),
@@ -6723,9 +6754,11 @@ class WorkoutDetailPage extends StatelessWidget {
                 onPressed: () => store.toggleFavorite(workout.id),
                 icon: Icon(
                   isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.onSecondary,
+                  color: _isDark(context)
+                      ? Colors.white
+                      : (isFavorite
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSecondary),
                 ),
               ),
             ),
