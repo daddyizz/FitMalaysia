@@ -6658,29 +6658,34 @@ class _AppSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = _isDark(context);
     final scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: isDark ? const Color(0xFF3D4740) : const Color(0xFF66736B),
-        ),
-      ),
-      child: SwitchTheme(
-        data: SwitchThemeData(
-          trackColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected)
-                ? scheme.primary
-                : (isDark
-                      ? const Color(0xFF303530)
-                      : const Color(0xFFE2E6E2)),
+    return Transform.scale(
+      scaleX: .82,
+      scaleY: .74,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isDark
+                ? const Color(0xFF3D4740)
+                : const Color(0xFF66736B),
           ),
-          thumbColor: WidgetStatePropertyAll(
-            isDark ? const Color(0xFF171A17) : Colors.white,
-          ),
-          trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
         ),
-        child: Transform.scale(
-          scale: .82,
+        child: SwitchTheme(
+          data: SwitchThemeData(
+            trackColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+                  ? scheme.primary
+                  : (isDark
+                        ? const Color(0xFF303530)
+                        : const Color(0xFFE2E6E2)),
+            ),
+            thumbColor: WidgetStatePropertyAll(
+              isDark ? const Color(0xFF171A17) : Colors.white,
+            ),
+            trackOutlineColor: const WidgetStatePropertyAll(
+              Colors.transparent,
+            ),
+          ),
           child: Switch(value: value, onChanged: onChanged),
         ),
       ),
