@@ -47,6 +47,10 @@ class FitLifeStore extends ChangeNotifier {
   String partnerOfferUrl = defaultPartnerOfferUrl;
   bool partnerOfferEnabled = true;
   DateTime? partnerOfferLastShownAt;
+  DateTime? partnerOfferNextEligibleAt;
+  int partnerOfferLaunchDelaySeconds = 15;
+  int partnerOfferNotNowCooldownMinutes = 15;
+  int partnerOfferViewedCooldownHours = 24;
   bool healthConnectEnabled = false;
   int healthStepsToday = 0;
   String? healthStepsDateKey;
@@ -124,6 +128,15 @@ class FitLifeStore extends ChangeNotifier {
       partnerOfferLastShownAt = DateTime.tryParse(
         data['partnerOfferLastShownAt'] as String? ?? '',
       );
+      partnerOfferNextEligibleAt = DateTime.tryParse(
+        data['partnerOfferNextEligibleAt'] as String? ?? '',
+      );
+      partnerOfferLaunchDelaySeconds =
+          data['partnerOfferLaunchDelaySeconds'] as int? ?? 15;
+      partnerOfferNotNowCooldownMinutes =
+          data['partnerOfferNotNowCooldownMinutes'] as int? ?? 15;
+      partnerOfferViewedCooldownHours =
+          data['partnerOfferViewedCooldownHours'] as int? ?? 24;
       healthConnectEnabled = data['healthConnectEnabled'] as bool? ?? false;
       healthStepsToday = data['healthStepsToday'] as int? ?? 0;
       healthStepsDateKey = data['healthStepsDateKey'] as String?;
@@ -220,6 +233,10 @@ class FitLifeStore extends ChangeNotifier {
     'partnerOfferUrl': partnerOfferUrl,
     'partnerOfferEnabled': partnerOfferEnabled,
     'partnerOfferLastShownAt': partnerOfferLastShownAt?.toIso8601String(),
+    'partnerOfferNextEligibleAt': partnerOfferNextEligibleAt?.toIso8601String(),
+    'partnerOfferLaunchDelaySeconds': partnerOfferLaunchDelaySeconds,
+    'partnerOfferNotNowCooldownMinutes': partnerOfferNotNowCooldownMinutes,
+    'partnerOfferViewedCooldownHours': partnerOfferViewedCooldownHours,
     'healthConnectEnabled': healthConnectEnabled,
     'healthStepsToday': healthStepsToday,
     'healthStepsDateKey': healthStepsDateKey,
@@ -364,24 +381,59 @@ class FitLifeStore extends ChangeNotifier {
 
   bool get canShowPartnerOffer {
     if (!partnerOfferEnabled || partnerOfferUrl.trim().isEmpty) return false;
-    final lastShown = partnerOfferLastShownAt;
-    return lastShown == null ||
-        DateTime.now().difference(lastShown) >= const Duration(minutes: 15);
+    final nextEligibleAt = partnerOfferNextEligibleAt;
+    return nextEligibleAt == null || !DateTime.now().isBefore(nextEligibleAt);
   }
 
-  void markPartnerOfferShown() {
+  Duration get partnerOfferWaitUntilEligible {
+    final nextEligibleAt = partnerOfferNextEligibleAt;
+    if (nextEligibleAt == null) {
+      return Duration(seconds: partnerOfferLaunchDelaySeconds);
+    }
+    final remaining = nextEligibleAt.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  void recordPartnerOfferNotNow() {
     partnerOfferLastShownAt = DateTime.now();
+    partnerOfferNextEligibleAt = partnerOfferLastShownAt!.add(
+      Duration(minutes: partnerOfferNotNowCooldownMinutes),
+    );
     _changed();
   }
 
-  void updatePartnerOffer({String? url, bool? enabled}) {
+  void recordPartnerOfferViewed() {
+    partnerOfferLastShownAt = DateTime.now();
+    partnerOfferNextEligibleAt = partnerOfferLastShownAt!.add(
+      Duration(hours: partnerOfferViewedCooldownHours),
+    );
+    _changed();
+  }
+
+  void updatePartnerOffer({
+    String? url,
+    bool? enabled,
+    int? launchDelaySeconds,
+    int? notNowCooldownMinutes,
+    int? viewedCooldownHours,
+  }) {
     if (url != null) partnerOfferUrl = url.trim();
     if (enabled != null) partnerOfferEnabled = enabled;
+    if (launchDelaySeconds != null) {
+      partnerOfferLaunchDelaySeconds = launchDelaySeconds;
+    }
+    if (notNowCooldownMinutes != null) {
+      partnerOfferNotNowCooldownMinutes = notNowCooldownMinutes;
+    }
+    if (viewedCooldownHours != null) {
+      partnerOfferViewedCooldownHours = viewedCooldownHours;
+    }
     _changed();
   }
 
   void resetPartnerOfferCooldown() {
     partnerOfferLastShownAt = null;
+    partnerOfferNextEligibleAt = null;
     _changed();
   }
 
@@ -480,6 +532,10 @@ class FitLifeStore extends ChangeNotifier {
     partnerOfferUrl = defaultPartnerOfferUrl;
     partnerOfferEnabled = true;
     partnerOfferLastShownAt = null;
+    partnerOfferNextEligibleAt = null;
+    partnerOfferLaunchDelaySeconds = 15;
+    partnerOfferNotNowCooldownMinutes = 15;
+    partnerOfferViewedCooldownHours = 24;
     healthConnectEnabled = false;
     healthStepsToday = 0;
     healthStepsDateKey = null;

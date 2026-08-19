@@ -183,6 +183,9 @@ class CloudAccountService extends ChangeNotifier {
   Future<void> updateGlobalPartnerOffer({
     required String url,
     required bool enabled,
+    required int launchDelaySeconds,
+    required int notNowCooldownMinutes,
+    required int viewedCooldownHours,
   }) async {
     if (!isPartnerOfferAdmin || _firestore == null) {
       throw StateError('Sign in with the administrator account to edit offers.');
@@ -194,10 +197,19 @@ class CloudAccountService extends ChangeNotifier {
     await _firestore!.collection('app_config').doc('partner_offer').set({
       'url': trimmedUrl,
       'enabled': enabled,
+      'launchDelaySeconds': launchDelaySeconds,
+      'notNowCooldownMinutes': notNowCooldownMinutes,
+      'viewedCooldownHours': viewedCooldownHours,
       'updatedAt': FieldValue.serverTimestamp(),
       'updatedBy': user?.email,
     });
-    _store?.updatePartnerOffer(url: trimmedUrl, enabled: enabled);
+    _store?.updatePartnerOffer(
+      url: trimmedUrl,
+      enabled: enabled,
+      launchDelaySeconds: launchDelaySeconds,
+      notNowCooldownMinutes: notNowCooldownMinutes,
+      viewedCooldownHours: viewedCooldownHours,
+    );
   }
 
   void _watchGlobalPartnerOffer() {
@@ -214,7 +226,16 @@ class CloudAccountService extends ChangeNotifier {
             final url = data?['url'];
             final enabled = data?['enabled'];
             if (url is String && url.trim().isNotEmpty && enabled is bool) {
-              _store?.updatePartnerOffer(url: url, enabled: enabled);
+              _store?.updatePartnerOffer(
+                url: url,
+                enabled: enabled,
+                launchDelaySeconds:
+                    data?['launchDelaySeconds'] as int? ?? 15,
+                notNowCooldownMinutes:
+                    data?['notNowCooldownMinutes'] as int? ?? 15,
+                viewedCooldownHours:
+                    data?['viewedCooldownHours'] as int? ?? 24,
+              );
             }
           },
           onError: (_) {

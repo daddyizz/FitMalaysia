@@ -35,6 +35,8 @@ final _waterToastVisible = ValueNotifier<bool>(false);
 final _achievementToast = ValueNotifier<AchievementNotice?>(null);
 final _celebrationToken = ValueNotifier<int?>(null);
 final _partnerOfferScheduleTick = ValueNotifier<int>(0);
+enum _PartnerOfferAction { notNow, viewed }
+
 Timer? _waterToastTimer;
 Timer? _achievementToastTimer;
 Timer? _celebrationTimer;
@@ -950,27 +952,17 @@ class _FitLifeShellState extends State<FitLifeShell> {
     if (!store.partnerOfferEnabled || store.partnerOfferUrl.trim().isEmpty) {
       return;
     }
-    final lastShown = store.partnerOfferLastShownAt;
-    final wait =
-        delay ??
-        (lastShown == null
-            ? const Duration(seconds: 15)
-            : Duration(minutes: 15) - DateTime.now().difference(lastShown));
-    _partnerOfferTimer = Timer(
-      wait <= Duration.zero ? const Duration(seconds: 15) : wait,
-      _showPartnerOffer,
-    );
+    _partnerOfferTimer = Timer(delay ?? store.partnerOfferWaitUntilEligible, _showPartnerOffer);
   }
 
-  void _showPartnerOffer() {
+  Future<void> _showPartnerOffer() async {
     if (!mounted) return;
     final store = context.read<FitLifeStore>();
     if (!store.canShowPartnerOffer) {
       _schedulePartnerOffer();
       return;
     }
-    store.markPartnerOfferShown();
-    showModalBottomSheet<void>(
+    final action = await showModalBottomSheet<_PartnerOfferAction>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
@@ -998,7 +990,10 @@ class _FitLifeShellState extends State<FitLifeShell> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(sheetContext),
+                      onPressed: () => Navigator.pop(
+                        sheetContext,
+                        _PartnerOfferAction.notNow,
+                      ),
                       child: const Text('NOT NOW'),
                     ),
                   ),
@@ -1006,8 +1001,7 @@ class _FitLifeShellState extends State<FitLifeShell> {
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: () {
-                        Navigator.pop(sheetContext);
-                        _openPartnerOffer(context, store.partnerOfferUrl);
+                        Navigator.pop(sheetContext, _PartnerOfferAction.viewed);
                       },
                       style: FilledButton.styleFrom(
                         foregroundColor: _isDark(context)
@@ -1036,9 +1030,15 @@ class _FitLifeShellState extends State<FitLifeShell> {
           ),
         ),
       ),
-    ).whenComplete(
-      () => _schedulePartnerOffer(delay: const Duration(minutes: 15)),
     );
+    if (!mounted) return;
+    if (action == _PartnerOfferAction.viewed) {
+      store.recordPartnerOfferViewed();
+      _openPartnerOffer(context, store.partnerOfferUrl);
+    } else {
+      store.recordPartnerOfferNotNow();
+    }
+    _schedulePartnerOffer();
   }
 
   @override
@@ -6220,6 +6220,9 @@ class AdminPage extends StatefulWidget {
 
 class _AdminPageState extends State<AdminPage> {
   late final TextEditingController _offerUrl;
+  late int _launchDelaySeconds;
+  late int _notNowCooldownMinutes;
+  late int _viewedCooldownHours;
 
   @override
   void initState() {
@@ -6227,6 +6230,10 @@ class _AdminPageState extends State<AdminPage> {
     _offerUrl = TextEditingController(
       text: context.read<FitLifeStore>().partnerOfferUrl,
     );
+    final store = context.read<FitLifeStore>();
+    _launchDelaySeconds = store.partnerOfferLaunchDelaySeconds;
+    _notNowCooldownMinutes = store.partnerOfferNotNowCooldownMinutes;
+    _viewedCooldownHours = store.partnerOfferViewedCooldownHours;
   }
 
   @override
@@ -6249,6 +6256,9 @@ class _AdminPageState extends State<AdminPage> {
       await context.read<CloudAccountService>().updateGlobalPartnerOffer(
         url: url,
         enabled: store.partnerOfferEnabled,
+        launchDelaySeconds: _launchDelaySeconds,
+        notNowCooldownMinutes: _notNowCooldownMinutes,
+        viewedCooldownHours: _viewedCooldownHours,
       );
       if (!mounted) return;
       _partnerOfferScheduleTick.value++;
@@ -6305,7 +6315,7 @@ class _AdminPageState extends State<AdminPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Changes here are global. The optional offer appears 15 seconds after app launch, then at most once every 15 minutes. It never opens automatically.',
+                      'Changes here are global. Choose when the offer appears and separate cooldowns for Not Now and View Offer. It never opens automatically.',
                       style: TextStyle(color: _muted(context), fontSize: 12),
                     ),
                     const SizedBox(height: 14),
@@ -6321,6 +6331,9 @@ class _AdminPageState extends State<AdminPage> {
                               await account.updateGlobalPartnerOffer(
                                 url: _offerUrl.text,
                                 enabled: value,
+                                launchDelaySeconds: _launchDelaySeconds,
+                                notNowCooldownMinutes: _notNowCooldownMinutes,
+                                viewedCooldownHours: _viewedCooldownHours,
                               );
                               if (!context.mounted) return;
                               _partnerOfferScheduleTick.value++;
@@ -6351,6 +6364,33 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    _AdminTimingPicker(
+                      label: 'Show offer after app opens',
+                      value: _launchDelaySeconds,
+                      values: const [5, 10, 15, 30, 45, 60],
+                      suffix: 'seconds',
+                      onChanged: (value) =>
+                          setState(() => _launchDelaySeconds = value),
+                    ),
+                    const SizedBox(height: 10),
+                    _AdminTimingPicker(
+                      label: 'Not Now cooldown',
+                      value: _notNowCooldownMinutes,
+                      values: const [5, 10, 15, 30, 45, 60, 120, 240],
+                      suffix: 'minutes',
+                      onChanged: (value) =>
+                          setState(() => _notNowCooldownMinutes = value),
+                    ),
+                    const SizedBox(height: 10),
+                    _AdminTimingPicker(
+                      label: 'View Offer cooldown',
+                      value: _viewedCooldownHours,
+                      values: const [1, 6, 12, 24, 48, 72],
+                      suffix: 'hours',
+                      onChanged: (value) =>
+                          setState(() => _viewedCooldownHours = value),
+                    ),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
@@ -6381,12 +6421,12 @@ class _AdminPageState extends State<AdminPage> {
                   _partnerOfferScheduleTick.value++;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Partner offer 15-minute cooldown reset.'),
+                      content: Text('Partner offer cooldown reset.'),
                     ),
                   );
                 },
                 icon: const Icon(Icons.timer_off_outlined),
-                label: const Text('RESET 15-MINUTE COOLDOWN'),
+                label: const Text('RESET OFFER COOLDOWN'),
               ),
             ],
           ],
@@ -6394,6 +6434,39 @@ class _AdminPageState extends State<AdminPage> {
       ),
     );
   }
+}
+
+class _AdminTimingPicker extends StatelessWidget {
+  const _AdminTimingPicker({
+    required this.label,
+    required this.value,
+    required this.values,
+    required this.suffix,
+    required this.onChanged,
+  });
+
+  final String label;
+  final int value;
+  final List<int> values;
+  final String suffix;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) => DropdownButtonFormField<int>(
+    value: value,
+    decoration: InputDecoration(labelText: label),
+    items: values
+        .map(
+          (option) => DropdownMenuItem(
+            value: option,
+            child: Text('$option $suffix'),
+          ),
+        )
+        .toList(growable: false),
+    onChanged: (selected) {
+      if (selected != null) onChanged(selected);
+    },
+  );
 }
 
 class PrivacyPolicyPage extends StatelessWidget {
