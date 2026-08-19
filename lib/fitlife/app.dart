@@ -7761,7 +7761,9 @@ class WorkoutCompletePage extends StatelessWidget {
                     onPressed: () => _leaveCompletePage(context, 1),
                     style: FilledButton.styleFrom(
                       backgroundColor: _elevated(context),
-                      foregroundColor: scheme.onSecondary,
+                      foregroundColor: _isDark(context)
+                          ? Colors.white
+                          : scheme.onSecondary,
                       elevation: 2,
                       shadowColor: const Color(0x33000000),
                     ),
