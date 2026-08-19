@@ -6660,14 +6660,14 @@ class _AppSwitch extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Transform.scale(
       scaleX: .82,
-      scaleY: .69,
+      scaleY: .687,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(999),
           boxShadow: !isDark && value
               ? const [
                   BoxShadow(
-                    color: Color(0x14152015),
+                    color: Color(0x11152015),
                     blurRadius: 2,
                     offset: Offset(0, 1),
                   ),
