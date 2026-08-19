@@ -610,6 +610,12 @@ ThemeData _lightTheme() {
         shadowColor: const Color(0x59152015),
       ),
     ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: scheme.onSecondary,
+        side: const BorderSide(color: Color(0x24000000)),
+      ),
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: false,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -1037,6 +1043,7 @@ class _GlassBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const tabs = [
       (label: 'HOME', icon: Icons.home_outlined),
@@ -3320,7 +3327,14 @@ class _ProgressBodyState extends State<_ProgressBody> {
                           ? Colors.black
                           : Colors.white,
                     ),
-                    child: const Text('SAVE TO PROFILE'),
+                    child: Text(
+                      'SAVE TO PROFILE',
+                      style: TextStyle(
+                        shadows: _isDark(context)
+                            ? null
+                            : const [_buttonTextLift],
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -3362,8 +3376,26 @@ class _ProgressBodyState extends State<_ProgressBody> {
                     ),
                     FilledButton.icon(
                       onPressed: () => logWeight(context),
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('LOG'),
+                      style: FilledButton.styleFrom(
+                        foregroundColor: _isDark(context)
+                            ? Colors.black
+                            : Colors.white,
+                      ),
+                      icon: Icon(
+                        Icons.add,
+                        size: 16,
+                        shadows: _isDark(context)
+                            ? null
+                            : const [_buttonTextLift],
+                      ),
+                      label: Text(
+                        'LOG',
+                        style: TextStyle(
+                          shadows: _isDark(context)
+                              ? null
+                              : const [_buttonTextLift],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -5590,6 +5622,46 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+                Card(
+                  child: InkWell(
+                    onTap: () => _showAbout(context),
+                    borderRadius: BorderRadius.circular(18),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: scheme.primary),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'About',
+                                  style: GoogleFonts.archivo(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -.25,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  'App information and acknowledgements',
+                                  style: TextStyle(
+                                    color: _muted(context),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, color: _muted(context)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 AnimatedBuilder(
                   animation: PrivacyConsent.instance,
                   builder: (context, _) {
@@ -5769,6 +5841,37 @@ class SettingsPage extends StatelessWidget {
         );
       }
     }
+  }
+
+  void _showAbout(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'FITMALAYSIA',
+          style: GoogleFonts.archivo(fontWeight: FontWeight.w900),
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Workout Tracker'),
+            SizedBox(height: 6),
+            Text('Version 1.0.8'),
+            SizedBox(height: 18),
+            Text('Designed & built with love by Daddy Izz.'),
+            SizedBox(height: 12),
+            Text('Special thanks to our testers, contributors, family and friends.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('CLOSE'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _setWorkoutReminders(
@@ -6135,7 +6238,6 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     final store = context.watch<FitLifeStore>();
     final account = context.watch<CloudAccountService>();
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -6178,30 +6280,37 @@ class _AdminPageState extends State<AdminPage> {
                       style: TextStyle(color: _muted(context), fontSize: 12),
                     ),
                     const SizedBox(height: 14),
-                    SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Enable partner offer'),
-                      value: store.partnerOfferEnabled,
-                      activeThumbColor: scheme.primary,
-                      onChanged: (value) async {
-                        try {
-                          await account.updateGlobalPartnerOffer(
-                            url: _offerUrl.text,
-                            enabled: value,
-                          );
-                          if (!context.mounted) return;
-                          _partnerOfferScheduleTick.value++;
-                        } catch (error) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                error.toString().replaceFirst('Bad state: ', ''),
-                              ),
-                            ),
-                          );
-                        }
-                      },
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text('Enable partner offer'),
+                        ),
+                        _AppSwitch(
+                          value: store.partnerOfferEnabled,
+                          onChanged: (value) async {
+                            try {
+                              await account.updateGlobalPartnerOffer(
+                                url: _offerUrl.text,
+                                enabled: value,
+                              );
+                              if (!context.mounted) return;
+                              _partnerOfferScheduleTick.value++;
+                            } catch (error) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    error.toString().replaceFirst(
+                                      'Bad state: ',
+                                      '',
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -6476,9 +6585,7 @@ class _SettingToggle extends StatelessWidget {
   final ValueChanged<bool> onChanged;
   @override
   Widget build(BuildContext context) {
-    final isDark = _isDark(context);
     final mutedColor = _muted(context);
-    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 13),
       child: Row(
@@ -6503,28 +6610,54 @@ class _SettingToggle extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          SwitchTheme(
-            data: SwitchThemeData(
-              trackColor: WidgetStateProperty.resolveWith(
-                (states) => states.contains(WidgetState.selected)
-                    ? scheme.primary
-                    : (isDark
-                          ? const Color(0xFF303530)
-                          : const Color(0xFFE2E6E2)),
-              ),
-              thumbColor: WidgetStatePropertyAll(
-                isDark ? const Color(0xFF171A17) : Colors.white,
-              ),
-              trackOutlineColor: const WidgetStatePropertyAll(
-                Colors.transparent,
-              ),
-            ),
-            child: Transform.scale(
-              scale: .82,
-              child: Switch(value: value, onChanged: onChanged),
-            ),
-          ),
+          _AppSwitch(value: value, onChanged: onChanged),
         ],
+      ),
+    );
+  }
+}
+
+class _AppSwitch extends StatelessWidget {
+  const _AppSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = _isDark(context);
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: isDark
+            ? null
+            : const [
+                BoxShadow(
+                  color: Color(0x240C2413),
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+      ),
+      child: SwitchTheme(
+        data: SwitchThemeData(
+          trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? scheme.primary
+                : (isDark
+                      ? const Color(0xFF303530)
+                      : const Color(0xFFE2E6E2)),
+          ),
+          thumbColor: WidgetStatePropertyAll(
+            isDark ? const Color(0xFF171A17) : Colors.white,
+          ),
+          trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+        ),
+        child: Transform.scale(
+          scale: .82,
+          child: Switch(value: value, onChanged: onChanged),
+        ),
       ),
     );
   }
