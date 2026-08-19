@@ -7643,9 +7643,9 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                         style: FilledButton.styleFrom(
                           minimumSize: const Size(120, 54),
                           backgroundColor: _elevated(context),
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onSecondary,
+                          foregroundColor: _isDark(context)
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSecondary,
                           elevation: 0,
                         ),
                         onPressed: _skipExercise,
