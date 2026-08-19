@@ -9,17 +9,16 @@ import 'privacy_consent.dart';
 /// Shows an interstitial only at the natural end of a completed workout.
 ///
 /// Google's SDK owns the close control and any countdown shown on the ad.
-/// A release unit ID is deliberately supplied at build time, so the app never
-/// ships a Google test ad to real users by accident.
+/// Debug builds use Google's test unit; release builds use FitMalaysia's
+/// dedicated workout-complete interstitial unit.
 class WorkoutInterstitialAd {
   WorkoutInterstitialAd._();
 
   static final instance = WorkoutInterstitialAd._();
 
   static const _androidTestUnitId = 'ca-app-pub-3940256099942544/1033173712';
-  static const _androidProductionUnitId = String.fromEnvironment(
-    'WORKOUT_INTERSTITIAL_AD_UNIT_ID',
-  );
+  static const _androidProductionUnitId =
+      'ca-app-pub-4110950503958596/5919795642';
 
   InterstitialAd? _ad;
   bool _loading = false;
